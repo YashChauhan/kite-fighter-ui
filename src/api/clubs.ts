@@ -1,0 +1,44 @@
+import apiClient from "./client";
+import type { Club, PaginatedResponse } from "../types";
+
+export const getClubs = async (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}): Promise<PaginatedResponse<Club>> => {
+  const response = await apiClient.get<PaginatedResponse<Club>>("/clubs", {
+    params,
+  });
+  return response.data;
+};
+
+export const getClubById = async (id: string): Promise<Club> => {
+  const response = await apiClient.get<Club>(`/clubs/${id}`);
+  return response.data;
+};
+
+export const getClubPlayers = async (id: string): Promise<{ data: any[] }> => {
+  const response = await apiClient.get(`/clubs/${id}/players`);
+  return response.data;
+};
+
+export const createClub = async (data: {
+  name: string;
+  description?: string;
+  foundedDate?: string;
+}): Promise<Club> => {
+  const response = await apiClient.post<Club>("/clubs", data);
+  return response.data;
+};
+
+export const updateClub = async (
+  id: string,
+  data: {
+    name?: string;
+    description?: string;
+  },
+): Promise<Club> => {
+  const response = await apiClient.put<Club>(`/clubs/${id}`, data);
+  return response.data;
+};
