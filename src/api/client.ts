@@ -14,6 +14,7 @@ if (ENVIRONMENT === "development") {
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // Enable sending cookies with requests
   headers: {
     "Content-Type": "application/json",
   },
