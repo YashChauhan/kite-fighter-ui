@@ -110,10 +110,31 @@ export default function ClubDetailsPage() {
       setJoining(true);
       const result = await requestJoinClub(clubId, 'I would like to join your club');
       notificationService.success(result.message || 'Join request sent! Waiting for owner approval.');
-      // Optionally reload data
+      // Reload club data to reflect updated status
       await loadClubData();
     } catch (err: any) {
-      notificationService.error(err.response?.data?.message || 'Failed to send join request');
+      const errorData = err.response?.data || err;
+      const errorCode = errorData.code || errorData.statusCode;
+      const errorMessage = errorData.message || 'Failed to send join request';
+      
+      // Handle specific error cases from the API guide
+      if (errorCode === 'VALIDATION_ERROR') {
+        if (errorMessage.includes('already a member')) {
+          notificationService.error('You are already a member of this club');
+        } else if (errorMessage.includes('already pending')) {
+          notificationService.error('You already have a pending join request for this club');
+        } else {
+          notificationService.error(errorMessage);
+        }
+      } else if (errorCode === 'UNAUTHORIZED' || errorCode === 401) {
+        notificationService.error('Please log in to join a club');
+      } else if (errorCode === 'NOT_FOUND' || errorCode === 404) {
+        notificationService.error('Club not found');
+      } else if (errorCode === 429) {
+        notificationService.error('Too many requests. Please try again later.');
+      } else {
+        notificationService.error(errorMessage);
+      }
     } finally {
       setJoining(false);
     }
@@ -131,7 +152,9 @@ export default function ClubDetailsPage() {
       notificationService.success(result.message || 'Left the club successfully');
       await loadClubData();
     } catch (err: any) {
-      notificationService.error(err.response?.data?.message || 'Failed to leave club');
+      const errorData = err.response?.data || err;
+      const errorMessage = errorData.message || 'Failed to leave club';
+      notificationService.error(errorMessage);
     }
   };
 
