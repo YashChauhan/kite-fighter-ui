@@ -454,7 +454,7 @@ export default function LiveMatchView() {
       >
         {match && (
           <RecordFightForm
-            matchId={match._id || match.id}
+            matchId={match.id}
             team1Players={match.team1.players}
             team2Players={match.team2.players}
             onSuccess={() => {

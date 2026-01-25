@@ -13,7 +13,6 @@ import {
   Chip,
   FormControl,
   FormLabel,
-  Typography,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { createClub } from '../api/clubs';
@@ -50,13 +49,11 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
     setLoadingPlayers(true);
     try {
       const response = await getPlayers({ 
-        limit: 100,
+        limit: 1000, // Get all approved players
         page: 1 
       });
-      console.log('Players response:', response);
       // Filter only approved players
       const approved = response.data.filter(p => p.status === ApprovalStatus.APPROVED);
-      console.log('Approved players:', approved);
       setApprovedPlayers(approved);
     } catch (err) {
       console.error('Failed to load players:', err);
@@ -74,11 +71,6 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
       return;
     }
 
-    if (!owner) {
-      setError('Club owner is required');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -87,8 +79,6 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
         name: name.trim(),
         description: description.trim() || undefined,
         foundedDate: foundedDate || undefined,
-        ownerId: owner._id || owner.id,
-        players: selectedPlayers.map(p => p._id || p.id),
       });
 
       notificationService.success('Club created successfully!');
@@ -165,88 +155,8 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
               InputLabelProps={{
                 shrink: true,
               }}
+              helperText="When the club was established (optional)"
             />
-
-            <FormControl fullWidth required>
-              <FormLabel sx={{ mb: 1, fontWeight: 'medium' }}>Club Owner</FormLabel>
-              <Autocomplete
-                value={owner}
-                onChange={(_, newValue) => setOwner(newValue)}
-                options={approvedPlayers}
-                getOptionLabel={(player) => `${player.name} (${player.email})`}
-                loading={loadingPlayers}
-                disabled={loading || loadingPlayers}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Select club owner"
-                    required
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingPlayers ? <CircularProgress size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                renderOption={(props, player) => (
-                  <li {...props} key={player._id || player.id}>
-                    <Box>
-                      <Typography variant="body1">{player.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {player.email}
-                      </Typography>
-                    </Box>
-                  </li>
-                )}
-              />
-            </FormControl>
-
-            <FormControl fullWidth>
-              <FormLabel sx={{ mb: 1, fontWeight: 'medium' }}>Additional Members (Optional)</FormLabel>
-              <Autocomplete
-                multiple
-                value={selectedPlayers}
-                onChange={(_, newValue) => {
-                  // Prevent selecting the owner as a member
-                  const filtered = newValue.filter(p => (p._id || p.id) !== (owner?._id || owner?.id));
-                  setSelectedPlayers(filtered);
-                }}
-                options={approvedPlayers.filter(p => (p._id || p.id) !== (owner?._id || owner?.id))}
-                getOptionLabel={(player) => player.name}
-                loading={loadingPlayers}
-                disabled={loading || loadingPlayers}
-                renderTags={(value, getTagProps) =>
-                  value.map((player, index) => (
-                    <Chip
-                      label={player.name}
-                      {...getTagProps({ index })}
-                      key={player._id || player.id}
-                    />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Select additional members"
-                    helperText="Members to add to the club (owner is automatically included)"
-                  />
-                )}
-                renderOption={(props, player) => (
-                  <li {...props} key={player._id || player.id}>
-                    <Box>
-                      <Typography variant="body1">{player.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {player.email}
-                      </Typography>
-                    </Box>
-                  </li>
-                )}
-              />
-            </FormControl>
           </Box>
         </DialogContent>
 

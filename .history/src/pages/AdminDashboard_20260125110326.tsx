@@ -198,7 +198,7 @@ export default function AdminDashboard() {
     try {
       await resolveFightDispute(fightId, resolution);
       notificationService.success('Fight dispute resolved');
-      setDisputedFights(prev => prev.filter(f => (f._id || f.id) !== fightId));
+      setDisputedFights(prev => prev.filter(f => f.id !== fightId));
     } catch (err: any) {
       notificationService.error(err.response?.data?.message || 'Failed to resolve dispute');
     }
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
                         variant="contained"
                         color="success"
                         startIcon={<ApproveIcon />}
-                        onClick={() => handleResolveFightDispute(fight._id || fight.id, 'confirm')}
+                        onClick={() => handleResolveFightDispute(fight.id, 'confirm')}
                       >
                         Confirm Result
                       </Button>
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                         variant="outlined"
                         color="error"
                         startIcon={<RejectIcon />}
-                        onClick={() => handleResolveFightDispute(fight._id || fight.id, 'cancel')}
+                        onClick={() => handleResolveFightDispute(fight.id, 'cancel')}
                       >
                         Cancel Fight
                       </Button>

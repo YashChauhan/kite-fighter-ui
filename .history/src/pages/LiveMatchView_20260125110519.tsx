@@ -136,7 +136,7 @@ export default function LiveMatchView() {
     const unsubFightConfirmed = socketService.onFightConfirmed((message: any) => {
       if (message.matchId === matchId && message.data?.fight) {
         setFights(prev =>
-          prev.map(f => (f._id || f.id) === (message.data.fight._id || message.data.fight.id) ? { 
+          prev.map(f => f.id === message.data.fight._id ? { 
             ...f, 
             status: FightStatus.CONFIRMED 
           } : f)
@@ -293,10 +293,10 @@ export default function LiveMatchView() {
             </Typography>
           ) : (
             confirmedFights.map((fight, index) => {
-              const isTeam1Win = match.team1.players.some((p: any) => (p._id || p.id) === (fight.winner?._id || fight.winner?.id));
+              const isTeam1Win = match.team1.players.some((p: any) => p.id === fight.winner?.id);
               return (
                 <Box
-                  key={fight._id || fight.id}
+                  key={fight.id || fight._id}
                   sx={{
                     minWidth: 40,
                     height: 40,
@@ -454,7 +454,7 @@ export default function LiveMatchView() {
       >
         {match && (
           <RecordFightForm
-            matchId={match._id || match.id}
+            matchId={match.id}
             team1Players={match.team1.players}
             team2Players={match.team2.players}
             onSuccess={() => {
