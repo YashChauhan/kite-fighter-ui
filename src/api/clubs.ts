@@ -66,3 +66,28 @@ export const getClubMembers = async (
   const response = await apiClient.get(`/clubs/${clubId}/members`);
   return response.data;
 };
+
+export const requestJoinClub = async (
+  clubId: string,
+  message?: string,
+): Promise<{ message: string; club: Club }> => {
+  const response = await apiClient.post(`/clubs/join-request`, {
+    clubId,
+    message,
+  });
+  return response.data;
+};
+
+export const cancelJoinRequest = async (
+  clubId: string,
+): Promise<{ message: string; club: Club }> => {
+  const response = await apiClient.delete(`/clubs/${clubId}/join-request`);
+  return response.data;
+};
+
+export const leaveClub = async (
+  clubId: string,
+): Promise<{ message: string; club: Club }> => {
+  const response = await apiClient.post(`/clubs/${clubId}/leave`);
+  return response.data;
+};

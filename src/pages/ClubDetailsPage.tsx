@@ -25,12 +25,11 @@ import {
   Settings as SettingsIcon,
   PersonAdd as JoinIcon,
 } from '@mui/icons-material';
-import { getClubById, getClubPlayers } from '../api/clubs';
+import { getClubById, getClubPlayers, requestJoinClub, leaveClub } from '../api/clubs';
 import type { Club, Player } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import { format } from 'date-fns';
-import apiClient from '../api/client';
 
 export default function ClubDetailsPage() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -109,8 +108,8 @@ export default function ClubDetailsPage() {
     
     try {
       setJoining(true);
-      await apiClient.post(`/clubs/${clubId}/join`);
-      notificationService.success('Join request sent! Waiting for owner approval.');
+      const result = await requestJoinClub(clubId, 'I would like to join your club');
+      notificationService.success(result.message || 'Join request sent! Waiting for owner approval.');
       // Optionally reload data
       await loadClubData();
     } catch (err: any) {
@@ -128,8 +127,8 @@ export default function ClubDetailsPage() {
     }
     
     try {
-      await apiClient.post(`/clubs/${clubId}/leave`);
-      notificationService.success('Left the club successfully');
+      const result = await leaveClub(clubId);
+      notificationService.success(result.message || 'Left the club successfully');
       await loadClubData();
     } catch (err: any) {
       notificationService.error(err.response?.data?.message || 'Failed to leave club');
