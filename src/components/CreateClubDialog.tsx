@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,10 +9,18 @@ import {
   Box,
   CircularProgress,
   Alert,
+  Autocomplete,
+  Chip,
+  FormControl,
+  FormLabel,
+  Typography,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { createClub } from '../api/clubs';
+import { getPlayers } from '../api/players';
 import notificationService from '../services/notificationService';
+import type { Player } from '../types';
+import { ApprovalStatus } from '../types';
 
 interface CreateClubDialogProps {
   open: boolean;
@@ -24,14 +32,48 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [foundedDate, setFoundedDate] = useState('');
+  const [owner, setOwner] = useState<Player | null>(null);
+  const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
+  const [approvedPlayers, setApprovedPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load approved players when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadApprovedPlayers();
+    }
+  }, [open]);
+
+  const loadApprovedPlayers = async () => {
+    setLoadingPlayers(true);
+    try {
+      const response = await getPlayers({ 
+        limit: 1000, // Get all approved players
+        page: 1 
+      });
+      // Filter only approved players
+      const approved = response.data.filter(p => p.status === ApprovalStatus.APPROVED);
+      setApprovedPlayers(approved);
+    } catch (err) {
+      console.error('Failed to load players:', err);
+      notificationService.error('Failed to load players');
+    } finally {
+      setLoadingPlayers(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
       setError('Club name is required');
+      return;
+    }
+
+    if (!owner) {
+      setError('Club owner is required');
       return;
     }
 
@@ -43,6 +85,8 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
         name: name.trim(),
         description: description.trim() || undefined,
         foundedDate: foundedDate || undefined,
+        ownerId: owner.id,
+        players: selectedPlayers.map(p => p.id),
       });
 
       notificationService.success('Club created successfully!');
@@ -55,7 +99,9 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
     } finally {
       setLoading(false);
     }
-  };
+  };Owner(null);
+      setSelectedPlayers([]);
+      set
 
   const handleClose = () => {
     if (!loading) {
@@ -119,6 +165,87 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
               InputLabelProps={{
                 shrink: true,
               }}
+
+            <FormControl fullWidth required>
+              <FormLabel sx={{ mb: 1, fontWeight: 'medium' }}>Club Owner</FormLabel>
+              <Autocomplete
+                value={owner}
+                onChange={(_, newValue) => setOwner(newValue)}
+                options={approvedPlayers}
+                getOptionLabel={(player) => `${player.name} (${player.email})`}
+                loading={loadingPlayers}
+                disabled={loading || loadingPlayers}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select club owner"
+                    required
+                    InputProps={{ || !owner
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingPlayers ? <CircularProgress size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderOption={(props, player) => (
+                  <li {...props} key={player.id}>
+                    <Box>
+                      <Typography variant="body1">{player.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {player.email}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+              />
+            </FormControl>
+
+            <FormControl fullWidth>
+              <FormLabel sx={{ mb: 1, fontWeight: 'medium' }}>Additional Members (Optional)</FormLabel>
+              <Autocomplete
+                multiple
+                value={selectedPlayers}
+                onChange={(_, newValue) => {
+                  // Prevent selecting the owner as a member
+                  const filtered = newValue.filter(p => p.id !== owner?.id);
+                  setSelectedPlayers(filtered);
+                }}
+                options={approvedPlayers.filter(p => p.id !== owner?.id)}
+                getOptionLabel={(player) => player.name}
+                loading={loadingPlayers}
+                disabled={loading || loadingPlayers}
+                renderTags={(value, getTagProps) =>
+                  value.map((player, index) => (
+                    <Chip
+                      label={player.name}
+                      {...getTagProps({ index })}
+                      key={player.id}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select additional members"
+                    helperText="Members to add to the club (owner is automatically included)"
+                  />
+                )}
+                renderOption={(props, player) => (
+                  <li {...props} key={player.id}>
+                    <Box>
+                      <Typography variant="body1">{player.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {player.email}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+              />
+            </FormControl>
               helperText="When the club was established (optional)"
             />
           </Box>

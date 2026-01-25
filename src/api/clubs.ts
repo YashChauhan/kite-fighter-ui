@@ -27,6 +27,8 @@ export const createClub = async (data: {
   name: string;
   description?: string;
   foundedDate?: string;
+  ownerId: string;
+  players?: string[];
 }): Promise<Club> => {
   const response = await apiClient.post<Club>("/clubs", data);
   return response.data;
