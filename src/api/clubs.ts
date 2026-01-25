@@ -71,8 +71,7 @@ export const requestJoinClub = async (
   clubId: string,
   message?: string,
 ): Promise<{ message: string; club: Club }> => {
-  const response = await apiClient.post(`/clubs/join-request`, {
-    clubId,
+  const response = await apiClient.post(`/clubs/${clubId}/join`, {
     message,
   });
   return response.data;
