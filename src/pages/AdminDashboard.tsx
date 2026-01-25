@@ -26,6 +26,7 @@ import {
   Check as ApproveIcon,
   Close as RejectIcon,
   Gavel as DisputeIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 
@@ -45,6 +46,7 @@ import { getMatches } from '../api/matches';
 import { useAuth } from '../contexts/AuthContext';
 import socketService from '../services/socketService';
 import notificationService from '../services/notificationService';
+import CreateClubDialog from '../components/CreateClubDialog';
 
 type TabValue = 'players' | 'clubs' | 'fights' | 'matches';
 
@@ -66,6 +68,7 @@ export default function AdminDashboard() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectTarget, setRejectTarget] = useState<{ type: 'player' | 'club'; id: string } | null>(null);
+  const [createClubDialogOpen, setCreateClubDialogOpen] = useState(false);
 
   // Redirect if not admin
   useEffect(() => {
@@ -336,6 +339,17 @@ export default function AdminDashboard() {
         {/* Pending Clubs */}
         {activeTab === 'clubs' && (
           <>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6">Club Management</Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateClubDialogOpen(true)}
+              >
+                Create Club
+              </Button>
+            </Box>
+            
             {pendingClubs.length === 0 ? (
               <Alert severity="info">No pending club approvals</Alert>
             ) : (
@@ -460,6 +474,15 @@ export default function AdminDashboard() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Create Club Dialog */}
+      <CreateClubDialog
+        open={createClubDialogOpen}
+        onClose={() => setCreateClubDialogOpen(false)}
+        onSuccess={() => {
+          loadData();
+        }}
+      />
     </Box>
   );
 }
