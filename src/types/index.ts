@@ -117,6 +117,40 @@ export interface Player {
   updatedAt: string;
 }
 
+export const ClubMemberRole = {
+  OWNER: "owner",
+  CO_OWNER: "co_owner",
+  MEMBER: "member",
+} as const;
+export type ClubMemberRole =
+  (typeof ClubMemberRole)[keyof typeof ClubMemberRole];
+
+export const ClubJoinRequestStatus = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  CANCELLED: "cancelled",
+} as const;
+export type ClubJoinRequestStatus =
+  (typeof ClubJoinRequestStatus)[keyof typeof ClubJoinRequestStatus];
+
+export interface ClubMember {
+  playerId: string | Player;
+  role: ClubMemberRole;
+  joinedAt: string;
+}
+
+export interface ClubJoinRequest {
+  playerId: string;
+  playerName: string;
+  playerEmail: string;
+  requestedAt: string;
+  status: ClubJoinRequestStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+}
+
 export interface Club {
   id: string;
   _id?: string;
@@ -124,6 +158,8 @@ export interface Club {
   description?: string;
   foundedDate?: string;
   players: string[] | Player[];
+  members?: ClubMember[];
+  joinRequests?: ClubJoinRequest[];
   status: ApprovalStatus;
   deletionRequested: boolean;
   competitiveMatchStats: {

@@ -13,8 +13,13 @@ export const getClubs = async (params?: {
   return response.data;
 };
 
-export const getClubById = async (id: string): Promise<Club> => {
-  const response = await apiClient.get<Club>(`/clubs/${id}`);
+export const getClubById = async (
+  id: string,
+  populate?: boolean,
+): Promise<Club> => {
+  const response = await apiClient.get<Club>(`/clubs/${id}`, {
+    params: populate ? { populate: "players" } : undefined,
+  });
   return response.data;
 };
 
@@ -42,5 +47,22 @@ export const updateClub = async (
   },
 ): Promise<Club> => {
   const response = await apiClient.put<Club>(`/clubs/${id}`, data);
+  return response.data;
+};
+
+export const getClubMembers = async (
+  clubId: string,
+): Promise<
+  Array<{
+    playerId: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+    role: "owner" | "co_owner" | "member";
+    joinedAt: string;
+  }>
+> => {
+  const response = await apiClient.get(`/clubs/${clubId}/members`);
   return response.data;
 };

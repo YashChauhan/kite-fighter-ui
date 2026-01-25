@@ -8,6 +8,10 @@ import MatchesListPage from './pages/MatchesListPage';
 import LiveMatchView from './pages/LiveMatchView';
 import PlayerProfile from './pages/PlayerProfile';
 import AdminDashboard from './pages/AdminDashboard';
+import ClubsListPage from './pages/ClubsListPage';
+import ClubDetailsPage from './pages/ClubDetailsPage';
+import ClubManagementPage from './pages/ClubManagementPage';
+import PlayersListPage from './pages/PlayersListPage';
 import { CircularProgress, Box } from '@mui/material';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -72,6 +76,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clubs"
+        element={
+          <ProtectedRoute>
+            <ClubsListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clubs/:clubId"
+        element={
+          <ProtectedRoute>
+            <ClubDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clubs/:clubId/manage"
+        element={
+          <ProtectedRoute>
+            <ClubManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/players"
+        element={
+          <ProtectedRoute>
+            <PlayersListPage />
           </ProtectedRoute>
         }
       />

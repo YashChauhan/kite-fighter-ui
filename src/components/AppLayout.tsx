@@ -12,6 +12,11 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
+  Tabs,
+  Tab,
+  BottomNavigation,
+  BottomNavigationAction,
+  Paper,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -20,6 +25,9 @@ import {
   Person,
   AdminPanelSettings,
   Sports,
+  Groups as ClubsIcon,
+  EmojiEvents as MatchesIcon,
+  People as PlayersIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,6 +42,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const getCurrentTab = () => {
+    if (location.pathname.startsWith('/clubs')) return 'clubs';
+    if (location.pathname.startsWith('/matches')) return 'matches';
+    if (location.pathname.startsWith('/players') && location.pathname !== `/players/${user?._id || user?.id}`) return 'players';
+    return false;
+  };
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -102,9 +117,30 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <Sports />
           </IconButton>
           
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate('/matches')}>
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ cursor: 'pointer' }} 
+            onClick={() => navigate('/matches')}
+          >
             Kite Fighters
           </Typography>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Tabs 
+            value={getCurrentTab()} 
+            onChange={(_, value) => navigate(`/${value}`)}
+            sx={{ mr: 2, display: { xs: 'none', sm: 'flex' } }}
+            textColor="inherit"
+            TabIndicatorProps={{
+              style: { backgroundColor: 'white' }
+            }}
+          >
+            <Tab icon={<MatchesIcon />} label="Matches" value="matches" />
+            <Tab icon={<ClubsIcon />} label="Clubs" value="clubs" />
+            <Tab icon={<PlayersIcon />} label="Players" value="players" />
+          </Tabs>
 
           {user && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -169,9 +205,34 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </Toolbar>
       </AppBar>
 
-      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default' }}>
+      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', pb: { xs: 7, sm: 0 } }}>
         {children}
       </Box>
+
+      {/* Bottom Navigation for Mobile */}
+      <Paper 
+        sx={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          display: { xs: 'block', sm: 'none' },
+          zIndex: 1000
+        }} 
+        elevation={3}
+      >
+        <BottomNavigation
+          value={getCurrentTab()}
+          onChange={(_, value) => {
+            if (value) navigate(`/${value}`);
+          }}
+          showLabels
+        >
+          <BottomNavigationAction label="Matches" value="matches" icon={<MatchesIcon />} />
+          <BottomNavigationAction label="Clubs" value="clubs" icon={<ClubsIcon />} />
+          <BottomNavigationAction label="Players" value="players" icon={<PlayersIcon />} />
+        </BottomNavigation>
+      </Paper>
     </Box>
   );
 };

@@ -33,7 +33,7 @@ import { MatchStatus, MatchType } from '../types';
 import { getMatches } from '../api/matches';
 import { getClubs } from '../api/clubs';
 import { useAuth } from '../contexts/AuthContext';
-import { useCanModify } from '../hooks/useCanModify';
+import { useCanModify, useCanCreateMatch } from '../hooks/useCanModify';
 import { offlineService } from '../services/offlineService';
 import notificationService from '../services/notificationService';
 import { EmptyState } from '../components/EmptyState';
@@ -55,6 +55,7 @@ export default function MatchesListPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canModify = useCanModify();
+  const canCreateMatch = useCanCreateMatch();
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -339,7 +340,7 @@ export default function MatchesListPage() {
           <EmptyState
             title="No Matches Yet"
             description="Get started by creating your first match or wait for upcoming matches to be scheduled."
-            actionLabel={canModify ? "Create Match" : undefined}
+            actionLabel={canCreateMatch ? "Create Match" : undefined}
             onAction={canModify ? () => navigate('/matches/new') : undefined}
             showAction={canModify}
           />
@@ -429,7 +430,7 @@ export default function MatchesListPage() {
       </Box>
 
       {/* Create Match FAB */}
-      {canModify && (
+      {canCreateMatch && (
         <Fab
           color="primary"
           aria-label="create match"
