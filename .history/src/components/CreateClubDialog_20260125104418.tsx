@@ -50,13 +50,11 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
     setLoadingPlayers(true);
     try {
       const response = await getPlayers({ 
-        limit: 100,
+        limit: 1000, // Get all approved players
         page: 1 
       });
-      console.log('Players response:', response);
       // Filter only approved players
       const approved = response.data.filter(p => p.status === ApprovalStatus.APPROVED);
-      console.log('Approved players:', approved);
       setApprovedPlayers(approved);
     } catch (err) {
       console.error('Failed to load players:', err);
@@ -87,8 +85,8 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
         name: name.trim(),
         description: description.trim() || undefined,
         foundedDate: foundedDate || undefined,
-        ownerId: owner._id || owner.id,
-        players: selectedPlayers.map(p => p._id || p.id),
+        ownerId: owner.id,
+        players: selectedPlayers.map(p => p.id),
       });
 
       notificationService.success('Club created successfully!');
@@ -101,7 +99,9 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
     } finally {
       setLoading(false);
     }
-  };
+  };Owner(null);
+      setSelectedPlayers([]);
+      set
 
   const handleClose = () => {
     if (!loading) {
@@ -181,7 +181,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                     {...params}
                     placeholder="Select club owner"
                     required
-                    InputProps={{
+                    InputProps={{ || !owner
                       ...params.InputProps,
                       endAdornment: (
                         <>
@@ -193,7 +193,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                   />
                 )}
                 renderOption={(props, player) => (
-                  <li {...props} key={player._id || player.id}>
+                  <li {...props} key={player.id}>
                     <Box>
                       <Typography variant="body1">{player.name}</Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -212,10 +212,10 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                 value={selectedPlayers}
                 onChange={(_, newValue) => {
                   // Prevent selecting the owner as a member
-                  const filtered = newValue.filter(p => (p._id || p.id) !== (owner?._id || owner?.id));
+                  const filtered = newValue.filter(p => p.id !== owner?.id);
                   setSelectedPlayers(filtered);
                 }}
-                options={approvedPlayers.filter(p => (p._id || p.id) !== (owner?._id || owner?.id))}
+                options={approvedPlayers.filter(p => p.id !== owner?.id)}
                 getOptionLabel={(player) => player.name}
                 loading={loadingPlayers}
                 disabled={loading || loadingPlayers}
@@ -224,7 +224,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                     <Chip
                       label={player.name}
                       {...getTagProps({ index })}
-                      key={player._id || player.id}
+                      key={player.id}
                     />
                   ))
                 }
@@ -236,7 +236,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                   />
                 )}
                 renderOption={(props, player) => (
-                  <li {...props} key={player._id || player.id}>
+                  <li {...props} key={player.id}>
                     <Box>
                       <Typography variant="body1">{player.name}</Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -247,6 +247,8 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                 )}
               />
             </FormControl>
+              helperText="When the club was established (optional)"
+            />
           </Box>
         </DialogContent>
 

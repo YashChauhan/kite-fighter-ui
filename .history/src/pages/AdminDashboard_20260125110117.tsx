@@ -148,7 +148,7 @@ export default function AdminDashboard() {
     try {
       await approvePlayer(playerId);
       notificationService.success('Player approved');
-      setPendingPlayers(prev => prev.filter(p => (p._id || p.id) !== playerId));
+      setPendingPlayers(prev => prev.filter(p => p.id !== playerId));
     } catch (err: any) {
       notificationService.error(err.response?.data?.message || 'Failed to approve player');
     }
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
     try {
       await rejectPlayer(rejectTarget.id, rejectReason);
       notificationService.success('Player rejected');
-      setPendingPlayers(prev => prev.filter(p => (p._id || p.id) !== rejectTarget.id));
+      setPendingPlayers(prev => prev.filter(p => p.id !== rejectTarget.id));
       setRejectDialogOpen(false);
       setRejectReason('');
       setRejectTarget(null);
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
     try {
       await approveClub(clubId);
       notificationService.success('Club approved');
-      setPendingClubs(prev => prev.filter(c => (c._id || c.id) !== clubId));
+      setPendingClubs(prev => prev.filter(c => c.id !== clubId));
     } catch (err: any) {
       notificationService.error(err.response?.data?.message || 'Failed to approve club');
     }
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
     try {
       await rejectClub(rejectTarget.id, rejectReason);
       notificationService.success('Club rejected');
-      setPendingClubs(prev => prev.filter(c => (c._id || c.id) !== rejectTarget.id));
+      setPendingClubs(prev => prev.filter(c => c.id !== rejectTarget.id));
       setRejectDialogOpen(false);
       setRejectReason('');
       setRejectTarget(null);
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
     try {
       await resolveFightDispute(fightId, resolution);
       notificationService.success('Fight dispute resolved');
-      setDisputedFights(prev => prev.filter(f => (f._id || f.id) !== fightId));
+      setDisputedFights(prev => prev.filter(f => f.id !== fightId));
     } catch (err: any) {
       notificationService.error(err.response?.data?.message || 'Failed to resolve dispute');
     }
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
               <Alert severity="info">No pending player approvals</Alert>
             ) : (
               pendingPlayers.map(player => (
-                <Card key={player._id || player.id} sx={{ mb: 2 }}>
+                <Card key={player.id} sx={{ mb: 2 }}>
                   <CardContent>
                     <Box display="flex" alignItems="center" gap={2}>
                       <Avatar>{player.name.charAt(0).toUpperCase()}</Avatar>
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
               <Alert severity="info">No pending club approvals</Alert>
             ) : (
               pendingClubs.map(club => (
-                <Card key={club._id || club.id} sx={{ mb: 2 }}>
+                <Card key={club.id} sx={{ mb: 2 }}>
                   <CardContent>
                     <Box display="flex" alignItems="center" gap={2}>
                       <Box flex={1}>
@@ -400,7 +400,7 @@ export default function AdminDashboard() {
               <Alert severity="info">No disputed fights</Alert>
             ) : (
               disputedFights.map(fight => (
-                <Card key={fight._id || fight.id} sx={{ mb: 2 }}>
+                <Card key={fight.id} sx={{ mb: 2 }}>
                   <CardContent>
                     <Box display="flex" alignItems="center" gap={2} mb={2}>
                       <DisputeIcon color="warning" />
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
                         variant="contained"
                         color="success"
                         startIcon={<ApproveIcon />}
-                        onClick={() => handleResolveFightDispute(fight._id || fight.id, 'confirm')}
+                        onClick={() => handleResolveFightDispute(fight.id, 'confirm')}
                       >
                         Confirm Result
                       </Button>
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                         variant="outlined"
                         color="error"
                         startIcon={<RejectIcon />}
-                        onClick={() => handleResolveFightDispute(fight._id || fight.id, 'cancel')}
+                        onClick={() => handleResolveFightDispute(fight.id, 'cancel')}
                       >
                         Cancel Fight
                       </Button>

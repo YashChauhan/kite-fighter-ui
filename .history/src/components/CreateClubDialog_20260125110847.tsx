@@ -50,7 +50,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
     setLoadingPlayers(true);
     try {
       const response = await getPlayers({ 
-        limit: 100,
+        limit: 1000, // Get all approved players
         page: 1 
       });
       console.log('Players response:', response);

@@ -50,13 +50,11 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
     setLoadingPlayers(true);
     try {
       const response = await getPlayers({ 
-        limit: 100,
+        limit: 1000, // Get all approved players
         page: 1 
       });
-      console.log('Players response:', response);
       // Filter only approved players
       const approved = response.data.filter(p => p.status === ApprovalStatus.APPROVED);
-      console.log('Approved players:', approved);
       setApprovedPlayers(approved);
     } catch (err) {
       console.error('Failed to load players:', err);
@@ -193,7 +191,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                   />
                 )}
                 renderOption={(props, player) => (
-                  <li {...props} key={player._id || player.id}>
+                  <li {...props} key={player.id}>
                     <Box>
                       <Typography variant="body1">{player.name}</Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -236,7 +234,7 @@ export default function CreateClubDialog({ open, onClose, onSuccess }: CreateClu
                   />
                 )}
                 renderOption={(props, player) => (
-                  <li {...props} key={player._id || player.id}>
+                  <li {...props} key={player.id}>
                     <Box>
                       <Typography variant="body1">{player.name}</Typography>
                       <Typography variant="caption" color="text.secondary">

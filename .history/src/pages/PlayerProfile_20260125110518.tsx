@@ -353,11 +353,11 @@ export default function PlayerProfile() {
         ) : (
           <Timeline position={isMobile ? 'right' : 'alternate'}>
             {fights.map((fight, index) => {
-              const isWinner = (fight.winner._id || fight.winner.id) === (player._id || player.id);
-              const opponent = (fight.team1Player._id || fight.team1Player.id) === (player._id || player.id) ? fight.team2Player : fight.team1Player;
+              const isWinner = fight.winner.id === player.id;
+              const opponent = fight.team1Player.id === player.id ? fight.team2Player : fight.team1Player;
 
               return (
-                <TimelineItem key={fight._id || fight.id}>
+                <TimelineItem key={fight.id}>
                   {!isMobile && (
                     <TimelineOppositeContent color="text.secondary">
                       {format(new Date(fight.reportedAt), 'PP')}
