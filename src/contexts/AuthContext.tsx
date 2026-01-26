@@ -73,9 +73,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       const response = await authApi.login(email, password);
-      setToken(response.data.token);
-      setUser(response.data.player);
-      localStorage.setItem('token', response.data.token);
+      const newToken = response.data.token;
+      const newUser = response.data.player;
+      
+      // Set localStorage first
+      localStorage.setItem('token', newToken);
+      
+      // Update state - this will trigger useEffect but we already have the user
+      setToken(newToken);
+      setUser(newUser);
     } catch (error) {
       throw error;
     }
@@ -88,8 +94,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    refreshUser();
-  }, [token]);
+    // Only fetch user if we have token but no user data
+    if (token && !user) {
+      refreshUser();
+    } else if (!token) {
+      setLoading(false);
+    } else {
+      // We have both token and user (from login), just set loading false
+      setLoading(false);
+    }
+  }, [token, user]);
 
   const value = {
     user,
