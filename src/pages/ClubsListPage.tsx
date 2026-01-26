@@ -54,19 +54,26 @@ export default function ClubsListPage() {
   }, [clubs, user]);
 
   const getUserClubRole = (clubId: string): 'owner' | 'co_owner' | 'member' | null => {
-    if (!user || !Array.isArray(user.clubs) || user.clubs.length === 0) return null;
+    if (!user || !Array.isArray(user.clubs) || user.clubs.length === 0) {
+      console.log('No user or clubs array:', { user: !!user, clubs: user?.clubs });
+      return null;
+    }
     
     const firstClub = user.clubs[0];
+    console.log('First club structure:', firstClub);
     
     // Check if clubs are populated with role info (PlayerClubMembership[])
     if (typeof firstClub === 'object' && 'role' in firstClub && 'club' in firstClub) {
       const membership = user.clubs.find((m: any) => {
         const memberClubId = m.club._id || m.club.id;
+        console.log('Checking membership for club:', { memberClubId, clubId, role: m.role });
         return memberClubId === clubId;
       });
+      console.log('Found membership:', membership);
       return membership?.role || null;
     }
     
+    console.log('Clubs not populated with role info, need to use fallback');
     return null;
   };
 
@@ -184,6 +191,32 @@ export default function ClubsListPage() {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
+        </Alert>
+      )}
+
+      {/* Pending Requests Notification Banner */}
+      {Object.keys(pendingRequestCounts).length > 0 && (
+        <Alert 
+          severity="warning" 
+          icon={<NotificationsIcon />}
+          sx={{ mb: 3 }}
+        >
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold">
+              Pending Join Requests
+            </Typography>
+            <Typography variant="body2">
+              You have pending join requests for your clubs. Click on a club card below to review them.
+            </Typography>
+            {Object.entries(pendingRequestCounts).map(([clubId, count]) => {
+              const club = clubs.find(c => (c._id || c.id) === clubId);
+              return club ? (
+                <Typography key={clubId} variant="body2" sx={{ mt: 0.5 }}>
+                  • <strong>{club.name}</strong>: {count} pending request{count > 1 ? 's' : ''}
+                </Typography>
+              ) : null;
+            })}
+          </Box>
         </Alert>
       )}
 

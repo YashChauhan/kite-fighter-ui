@@ -31,7 +31,6 @@ export const getCurrentUser = async (populate?: boolean): Promise<{ data: Player
   });
   return response.data;
 };
-};
 
 export const logout = (): void => {
   localStorage.removeItem("token");
