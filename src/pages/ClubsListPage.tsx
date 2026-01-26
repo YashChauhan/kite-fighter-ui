@@ -25,7 +25,7 @@ import {
   Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getClubs, getPendingJoinRequests, getClubMembers } from '../api/clubs';
+import { getClubs, getPendingJoinRequests } from '../api/clubs';
 import type { Club } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -53,6 +53,23 @@ export default function ClubsListPage() {
     }
   }, [clubs, user]);
 
+  const getUserClubRole = (clubId: string): 'owner' | 'co_owner' | 'member' | null => {
+    if (!user || !Array.isArray(user.clubs) || user.clubs.length === 0) return null;
+    
+    const firstClub = user.clubs[0];
+    
+    // Check if clubs are populated with role info (PlayerClubMembership[])
+    if (typeof firstClub === 'object' && 'role' in firstClub && 'club' in firstClub) {
+      const membership = user.clubs.find((m: any) => {
+        const memberClubId = m.club._id || m.club.id;
+        return memberClubId === clubId;
+      });
+      return membership?.role || null;
+    }
+    
+    return null;
+  };
+
   const loadPendingRequestCounts = async () => {
     if (!user) return;
     
@@ -63,13 +80,9 @@ export default function ClubsListPage() {
       if (!clubId) continue;
       
       try {
-        // Check if user is owner or co-owner
-        const members = await getClubMembers(clubId);
-        const userMember = members.find(
-          (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
-        );
+        const role = getUserClubRole(clubId);
         
-        if (userMember && (userMember.role === 'owner' || userMember.role === 'co_owner')) {
+        if (role === 'owner' || role === 'co_owner') {
           // User is owner/co-owner, get pending requests
           const requests = await getPendingJoinRequests(clubId);
           const pendingCount = requests.filter(req => req.status === 'pending').length;

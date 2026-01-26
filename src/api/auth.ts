@@ -25,9 +25,12 @@ export const login = async (
   return response.data;
 };
 
-export const getCurrentUser = async (): Promise<{ data: Player }> => {
-  const response = await apiClient.get<{ data: Player }>("/auth/me");
+export const getCurrentUser = async (populate?: boolean): Promise<{ data: Player }> => {
+  const response = await apiClient.get<{ data: Player }>("/auth/me", {
+    params: populate ? { populate: 'clubs' } : undefined,
+  });
   return response.data;
+};
 };
 
 export const logout = (): void => {

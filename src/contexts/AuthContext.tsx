@@ -58,7 +58,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await authApi.getCurrentUser();
+      // Fetch user with populated clubs to get role information
+      const response = await authApi.getCurrentUser(true);
       setUser(response.data);
     } catch (error) {
       console.error('Failed to fetch user:', error);

@@ -64,27 +64,38 @@ export default function ClubDetailsPage() {
       const clubData = await getClubById(clubId, true);
       setClub(clubData);
       
-      // Fetch club members with roles
-      try {
-        const clubMembersData = await getClubMembers(clubId);
-        console.log('Club members data:', clubMembersData);
-        console.log('Current user:', user);
+      // Get user role from populated clubs in user object
+      if (user) {
+        console.log('User clubs data:', user.clubs);
         
-        if (user) {
-          const currentUserMember = clubMembersData.find(
-            (m) => {
-              const memberPlayerId = m.playerId._id || m.playerId;
-              const userId = user._id || user.id;
-              console.log('Comparing:', memberPlayerId, 'with', userId);
-              return memberPlayerId === userId;
+        // Check if clubs are populated with membership info
+        if (Array.isArray(user.clubs) && user.clubs.length > 0) {
+          const firstClub = user.clubs[0];
+          
+          // Check if clubs are populated with role info (PlayerClubMembership[])
+          if (typeof firstClub === 'object' && 'role' in firstClub && 'club' in firstClub) {
+            const membership = user.clubs.find((m: any) => {
+              const memberClubId = m.club._id || m.club.id;
+              console.log('Comparing club:', memberClubId, 'with', clubId);
+              return memberClubId === clubId;
+            });
+            console.log('Found user membership from user.clubs:', membership);
+            setUserRole(membership?.role || null);
+            console.log('Set userRole to:', membership?.role || null);
+          } else {
+            // Fallback to old method if clubs aren't populated with roles
+            console.log('Clubs not populated with roles, fetching members...');
+            try {
+              const clubMembersData = await getClubMembers(clubId);
+              const currentUserMember = clubMembersData.find(
+                (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+              );
+              setUserRole(currentUserMember?.role || null);
+            } catch (err) {
+              console.error('Could not fetch club members with roles:', err);
             }
-          );
-          console.log('Found user membership:', currentUserMember);
-          setUserRole(currentUserMember?.role || null);
-          console.log('Set userRole to:', currentUserMember?.role || null);
+          }
         }
-      } catch (err) {
-        console.error('Could not fetch club members with roles:', err);
       }
       
       // Check if players are populated (objects) or just IDs (strings)

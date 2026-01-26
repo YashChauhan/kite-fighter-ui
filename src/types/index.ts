@@ -99,6 +99,12 @@ export interface StarTrophy {
   matchId?: string;
 }
 
+export interface PlayerClubMembership {
+  club: Club;
+  role: ClubMemberRole;
+  joinedAt: string;
+}
+
 export interface Player {
   id: string;
   _id?: string;
@@ -106,7 +112,7 @@ export interface Player {
   email: string;
   role: UserRole;
   status: ApprovalStatus;
-  clubs: string[] | Club[];
+  clubs: string[] | Club[] | PlayerClubMembership[];
   deletionRequested: boolean;
   rejectionReason?: string;
   fightStats: FightStats;
