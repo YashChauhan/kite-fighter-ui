@@ -78,10 +78,23 @@ export default function ClubsListPage() {
     try {
       const members = await getClubMembers(clubId);
       console.log(`📊 Members response for club ${clubId}:`, members);
+      const userId = user._id || user.id;
+      console.log(`🔍 Looking for user ID: ${userId}`);
+      
       const userMember = members.find(
         (m) => {
-          const memberPlayerId = (typeof m.playerId === 'object') ? (m.playerId._id || m.playerId.id) : m.playerId;
-          const userId = user._id || user.id;
+          let memberPlayerId: string;
+          
+          if (typeof m.playerId === 'string') {
+            memberPlayerId = m.playerId;
+          } else if (typeof m.playerId === 'object' && m.playerId) {
+            // Try different property names that might contain the ID
+            memberPlayerId = m.playerId._id || m.playerId.id || (m.playerId as any).playerId || '';
+            console.log(`   Player object:`, m.playerId);
+          } else {
+            memberPlayerId = '';
+          }
+          
           console.log(`   Comparing: ${memberPlayerId} === ${userId}`);
           return memberPlayerId === userId;
         }
