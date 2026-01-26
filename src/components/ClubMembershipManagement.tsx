@@ -291,48 +291,53 @@ export default function ClubMembershipManagement({
                   <Box key={request.playerId}>
                     {index > 0 && <Divider />}
                     <ListItem
-                      sx={{ px: 0 }}
-                      secondaryAction={
-                        <Box display="flex" gap={1}>
-                          <IconButton
-                            edge="end"
-                            color="success"
-                            onClick={() => handleApproveRequest(request)}
-                            disabled={processingRequest === request.playerId}
-                            title="Approve"
-                          >
-                            <ApproveIcon />
-                          </IconButton>
-                          <IconButton
-                            edge="end"
-                            color="error"
-                            onClick={() => openRejectDialog(request)}
-                            disabled={processingRequest === request.playerId}
-                            title="Reject"
-                          >
-                            <RejectIcon />
-                          </IconButton>
-                        </Box>
-                      }
+                      sx={{ 
+                        px: 0,
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'flex-start', sm: 'center' },
+                        py: 2,
+                      }}
                     >
-                      <ListItemAvatar>
-                        <Avatar>
-                          {request.playerName.charAt(0).toUpperCase()}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={request.playerName}
-                        secondary={
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              {request.playerEmail}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Requested {format(new Date(request.requestedAt), 'MMM dd, yyyy')}
-                            </Typography>
-                          </Box>
-                        }
-                      />
+                      <Box display="flex" alignItems="center" flex={1} width="100%" mb={{ xs: 1, sm: 0 }}>
+                        <ListItemAvatar>
+                          <Avatar>
+                            {request.playerName.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={request.playerName}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                                {request.playerEmail}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Requested {format(new Date(request.requestedAt), 'MMM dd, yyyy')}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </Box>
+                      <Box display="flex" gap={1} flexShrink={0}>
+                        <IconButton
+                          color="success"
+                          onClick={() => handleApproveRequest(request)}
+                          disabled={processingRequest === request.playerId}
+                          title="Approve"
+                          size="small"
+                        >
+                          <ApproveIcon />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          onClick={() => openRejectDialog(request)}
+                          disabled={processingRequest === request.playerId}
+                          title="Reject"
+                          size="small"
+                        >
+                          <RejectIcon />
+                        </IconButton>
+                      </Box>
                     </ListItem>
                   </Box>
                 ))}

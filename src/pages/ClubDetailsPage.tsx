@@ -230,14 +230,14 @@ export default function ClubDetailsPage() {
 
       <Box display="flex" gap={3} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
         <Box flex={1}>
-          <Card>
+          <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={3} mb={3}>
                 <Avatar sx={{ bgcolor: 'primary.main', width: 80, height: 80, fontSize: '2rem' }}>
                   {club.name.charAt(0).toUpperCase()}
                 </Avatar>
                 <Box flex={1}>
-                  <Typography variant="h4" gutterBottom>
+                  <Typography variant="h4" gutterBottom sx={{ mb: 1 }}>
                     {club.name}
                   </Typography>
                   <Box display="flex" gap={1} flexWrap="wrap">
@@ -339,15 +339,15 @@ export default function ClubDetailsPage() {
                   )}
                 </>
               )}
-              
-              {activeTab === 1 && isOwnerOrCoOwner() && (
-                <ClubMembershipManagement 
-                  clubId={clubId!} 
-                  onUpdate={loadClubData}
-                />
-              )}
             </CardContent>
           </Card>
+          
+          {activeTab === 1 && isOwnerOrCoOwner() && (
+            <ClubMembershipManagement 
+              clubId={clubId!} 
+              onUpdate={loadClubData}
+            />
+          )}
         </Box>
 
         <Box sx={{ width: { xs: '100%', md: '300px' }, flexShrink: 0 }}>
