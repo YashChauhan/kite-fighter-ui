@@ -95,18 +95,41 @@ export default function ClubsListPage() {
     }
   };
 
+  const isUserMemberOfClub = (clubId: string): boolean => {
+    if (!user || !Array.isArray(user.clubs)) return false;
+    
+    return user.clubs.some((c: any) => {
+      // Handle different club formats
+      if (typeof c === 'string') {
+        return c === clubId;
+      } else if (typeof c === 'object' && 'club' in c) {
+        return (c.club._id || c.club.id) === clubId;
+      } else if (typeof c === 'object') {
+        return (c._id || c.id) === clubId;
+      }
+      return false;
+    });
+  };
+
   const loadPendingRequestCounts = async () => {
     if (!user) return;
     
     console.log('=== 🚀 Loading Pending Request Counts ===');
     console.log('User ID:', user._id || user.id);
-    console.log('Total clubs to check:', clubs.length);
+    console.log('User clubs:', user.clubs);
+    console.log('Total clubs on page:', clubs.length);
     
     const counts: Record<string, number> = {};
     
     for (const club of clubs) {
       const clubId = club._id || club.id;
       if (!clubId) continue;
+      
+      // Skip clubs user is not a member of
+      if (!isUserMemberOfClub(clubId)) {
+        console.log(`⏭️  Skipping "${club.name}" - user is not a member`);
+        continue;
+      }
       
       console.log(`\n--- Checking club: "${club.name}" (${clubId}) ---`);
       
