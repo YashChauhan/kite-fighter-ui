@@ -201,7 +201,7 @@ export default function ClubDetailsPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <CircularProgress />
         </Box>
@@ -211,7 +211,7 @@ export default function ClubDetailsPage() {
 
   if (error || !club) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Alert severity="error">{error || 'Club not found'}</Alert>
         <Button startIcon={<BackIcon />} onClick={() => navigate('/clubs')} sx={{ mt: 2 }}>
           Back to Clubs
@@ -221,7 +221,7 @@ export default function ClubDetailsPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
       <Box sx={{ mb: 3 }}>
         <Button startIcon={<BackIcon />} onClick={() => navigate('/clubs')} sx={{ mb: 2 }}>
           Back to Clubs

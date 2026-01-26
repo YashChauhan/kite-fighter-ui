@@ -80,7 +80,7 @@ export default function PlayersListPage() {
 
   if (loading && page === 1) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <CircularProgress />
         </Box>
@@ -89,7 +89,7 @@ export default function PlayersListPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Kite Fighter Players

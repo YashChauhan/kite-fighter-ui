@@ -209,7 +209,7 @@ export default function ClubsListPage() {
 
   if (loading && page === 1) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <CircularProgress />
         </Box>
@@ -218,7 +218,7 @@ export default function ClubsListPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
       {/* DEBUG PANEL - Remove after testing */}
       {process.env.NODE_ENV === 'development' && user && (
         <Alert severity="info" sx={{ mb: 3 }}>
