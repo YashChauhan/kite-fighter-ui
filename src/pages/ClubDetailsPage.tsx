@@ -221,15 +221,15 @@ export default function ClubDetailsPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, width: '100%' }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
         <Button startIcon={<BackIcon />} onClick={() => navigate('/clubs')} sx={{ mb: 2 }}>
           Back to Clubs
         </Button>
       </Box>
 
-      <Box display="flex" gap={3} sx={{ flexDirection: { xs: 'column', md: 'row' }, width: '100%' }}>
-        <Box flex={1} sx={{ width: '100%' }}>
+      <Box display="flex" gap={3} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
+        <Box flex={1}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={3} mb={3}>
