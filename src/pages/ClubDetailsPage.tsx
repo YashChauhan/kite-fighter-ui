@@ -240,15 +240,15 @@ export default function ClubDetailsPage() {
                   <Typography variant="h4" gutterBottom>
                     {club.name}
                   </Typography>
-                  <Box display="flex" gap={2} flexWrap="wrap">
-                    {isMember() && (
-                      <Chip label="Member" color="success" size="small" />
+                  <Box display="flex" gap={1} flexWrap="wrap">
+                    {isOwner() && (
+                      <Chip label="Owner" color="primary" size="small" />
                     )}
                     {userRole === 'co_owner' && (
                       <Chip label="Co-Owner" color="secondary" size="small" />
                     )}
-                    {isOwner() && (
-                      <Chip label="Owner" color="primary" size="small" />
+                    {isMember() && !isOwner() && userRole !== 'co_owner' && (
+                      <Chip label="Member" color="success" size="small" />
                     )}
                   </Box>
                 </Box>
