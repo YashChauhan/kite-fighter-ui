@@ -25,7 +25,7 @@ import {
   Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getClubs, getPendingJoinRequests } from '../api/clubs';
+import { getClubs, getPendingJoinRequests, getClubMembers } from '../api/clubs';
 import type { Club } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -53,7 +53,7 @@ export default function ClubsListPage() {
     }
   }, [clubs, user]);
 
-  const getUserClubRole = (clubId: string): 'owner' | 'co_owner' | 'member' | null => {
+  const getUserClubRole = async (clubId: string): Promise<'owner' | 'co_owner' | 'member' | null> => {
     if (!user || !Array.isArray(user.clubs) || user.clubs.length === 0) {
       console.log('No user or clubs array:', { user: !!user, clubs: user?.clubs });
       return null;
@@ -73,8 +73,19 @@ export default function ClubsListPage() {
       return membership?.role || null;
     }
     
-    console.log('Clubs not populated with role info, need to use fallback');
-    return null;
+    // Fallback: clubs are just Club objects without role, need to fetch from members API
+    console.log('Clubs not populated with role info, fetching from members API for club:', clubId);
+    try {
+      const members = await getClubMembers(clubId);
+      const userMember = members.find(
+        (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+      );
+      console.log('Found user member from API:', userMember);
+      return userMember?.role || null;
+    } catch (err) {
+      console.error('Failed to get club members:', err);
+      return null;
+    }
   };
 
   const loadPendingRequestCounts = async () => {
@@ -91,7 +102,7 @@ export default function ClubsListPage() {
       if (!clubId) continue;
       
       try {
-        const role = getUserClubRole(clubId);
+        const role = await getUserClubRole(clubId);
         console.log(`Club "${club.name}" (${clubId}): role = ${role}`);
         
         if (role === 'owner' || role === 'co_owner') {
