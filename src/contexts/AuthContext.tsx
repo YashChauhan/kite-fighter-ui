@@ -75,14 +75,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authApi.login(email, password);
       const newToken = response.data.token;
-      const newUser = response.data.player;
       
-      // Set localStorage first
+      // Set localStorage and token first
       localStorage.setItem('token', newToken);
-      
-      // Update state synchronously
       setToken(newToken);
-      setUser(newUser);
+      
+      // Fetch user with populated clubs for role information
+      console.log('Fetching user with populated clubs...');
+      const userResponse = await authApi.getCurrentUser(true);
+      console.log('User data with clubs:', userResponse.data);
+      console.log('User clubs:', userResponse.data.clubs);
+      setUser(userResponse.data);
       setLoading(false);
     } catch (error) {
       throw error;
