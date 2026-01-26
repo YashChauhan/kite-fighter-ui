@@ -229,7 +229,7 @@ export default function ClubDetailsPage() {
       </Box>
 
       <Box display="flex" gap={3} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
-        <Box flex={1} sx={{ maxWidth: { md: '66%' } }}>
+        <Box flex={1}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={3} mb={3}>
@@ -350,7 +350,7 @@ export default function ClubDetailsPage() {
           </Card>
         </Box>
 
-        <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+        <Box sx={{ width: { xs: '100%', md: '300px' }, flexShrink: 0 }}>
           {club.competitiveMatchStats && (
             <Paper sx={{ p: 2, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
