@@ -15,21 +15,24 @@ import {
   ListItemAvatar,
   ListItemText,
   Chip,
-  Grid,
   Paper,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
   People as PeopleIcon,
   CalendarToday as CalendarIcon,
-  Settings as SettingsIcon,
   PersonAdd as JoinIcon,
+  Info as InfoIcon,
+  AdminPanelSettings as ManageIcon,
 } from '@mui/icons-material';
-import { getClubById, getClubPlayers, requestJoinClub, leaveClub } from '../api/clubs';
+import { getClubById, getClubPlayers, requestJoinClub, leaveClub, getClubMembers } from '../api/clubs';
 import type { Club, Player } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import { format } from 'date-fns';
+import ClubMembershipManagement from '../components/ClubMembershipManagement';
 
 export default function ClubDetailsPage() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -41,6 +44,8 @@ export default function ClubDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const [userRole, setUserRole] = useState<'owner' | 'co_owner' | 'member' | null>(null);
 
   useEffect(() => {
     if (clubId) {
@@ -58,6 +63,19 @@ export default function ClubDetailsPage() {
       // Try to get club with populated players
       const clubData = await getClubById(clubId, true);
       setClub(clubData);
+      
+      // Fetch club members with roles
+      try {
+        const clubMembersData = await getClubMembers(clubId);
+        if (user) {
+          const currentUserMember = clubMembersData.find(
+            (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+          );
+          setUserRole(currentUserMember?.role || null);
+        }
+      } catch (err) {
+        console.log('Could not fetch club members with roles');
+      }
       
       // Check if players are populated (objects) or just IDs (strings)
       if (Array.isArray(clubData.players) && clubData.players.length > 0) {
@@ -98,9 +116,11 @@ export default function ClubDetailsPage() {
   };
 
   const isOwner = (): boolean => {
-    if (!user) return false;
-    const member = members.find(m => (m._id || m.id) === (user._id || user.id));
-    return member ? (member as any).isOwner === true : false;
+    return userRole === 'owner';
+  };
+  
+  const isOwnerOrCoOwner = (): boolean => {
+    return userRole === 'owner' || userRole === 'co_owner';
   };
 
   const handleJoinClub = async () => {
@@ -187,8 +207,8 @@ export default function ClubDetailsPage() {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+      <Box display="flex" gap={3} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
+        <Box flex={1} sx={{ maxWidth: { md: '66%' } }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={3} mb={3}>
@@ -203,79 +223,95 @@ export default function ClubDetailsPage() {
                     {isMember() && (
                       <Chip label="Member" color="success" size="small" />
                     )}
+                    {userRole === 'co_owner' && (
+                      <Chip label="Co-Owner" color="secondary" size="small" />
+                    )}
                     {isOwner() && (
                       <Chip label="Owner" color="primary" size="small" />
                     )}
                   </Box>
                 </Box>
-                {isOwner() && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<SettingsIcon />}
-                    onClick={() => navigate(`/clubs/${clubId}/manage`)}
-                  >
-                    Manage
-                  </Button>
-                )}
               </Box>
-
-              {club.description && (
-                <Box mb={3}>
-                  <Typography variant="h6" gutterBottom>
-                    About
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    {club.description}
-                  </Typography>
-                </Box>
+              
+              {isOwnerOrCoOwner() && (
+                <Tabs
+                  value={activeTab}
+                  onChange={(_, value) => setActiveTab(value)}
+                  sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+                >
+                  <Tab icon={<InfoIcon />} label="About" />
+                  <Tab icon={<ManageIcon />} label="Manage Members" />
+                </Tabs>
               )}
 
-              <Box display="flex" gap={3} mb={3} flexWrap="wrap">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <PeopleIcon color="action" />
-                  <Typography variant="body1">
-                    {members.length} members
-                  </Typography>
-                </Box>
-                {club.foundedDate && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <CalendarIcon color="action" />
-                    <Typography variant="body1">
-                      Founded {format(new Date(club.foundedDate), 'MMMM yyyy')}
-                    </Typography>
+              {(activeTab === 0 || !isOwnerOrCoOwner()) && (
+                <>
+                  {club.description && (
+                    <Box mb={3}>
+                      <Typography variant="h6" gutterBottom>
+                        About
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        {club.description}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <Box display="flex" gap={3} mb={3} flexWrap="wrap">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <PeopleIcon color="action" />
+                      <Typography variant="body1">
+                        {members.length} members
+                      </Typography>
+                    </Box>
+                    {club.foundedDate && (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <CalendarIcon color="action" />
+                        <Typography variant="body1">
+                          Founded {format(new Date(club.foundedDate), 'MMMM yyyy')}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
-                )}
-              </Box>
 
-              {!isMember() && (
-                <Button
-                  variant="contained"
-                  startIcon={<JoinIcon />}
-                  onClick={handleJoinClub}
-                  disabled={joining}
-                  fullWidth
-                  sx={{ mt: 2 }}
-                >
-                  {joining ? 'Sending Request...' : 'Request to Join'}
-                </Button>
+                  {!isMember() && (
+                    <Button
+                      variant="contained"
+                      startIcon={<JoinIcon />}
+                      onClick={handleJoinClub}
+                      disabled={joining}
+                      fullWidth
+                      sx={{ mt: 2 }}
+                    >
+                      {joining ? 'Sending Request...' : 'Request to Join'}
+                    </Button>
+                  )}
+
+                  {isMember() && !isOwner() && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleLeaveClub}
+                      fullWidth
+                      sx={{ mt: 2 }}
+                    >
+                      Leave Club
+                    </Button>
+                  )}
+                </>
               )}
-
-              {isMember() && !isOwner() && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleLeaveClub}
-                  fullWidth
-                  sx={{ mt: 2 }}
-                >
-                  Leave Club
-                </Button>
+              
+              {activeTab === 1 && isOwnerOrCoOwner() && (
+                <ClubMembershipManagement 
+                  clubId={clubId!} 
+                  onUpdate={loadClubData}
+                />
               )}
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={4}>
+        <Box sx={{ width: { xs: '100%', md: '33%' } }}>
           {club.competitiveMatchStats && (
             <Paper sx={{ p: 2, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
@@ -336,8 +372,8 @@ export default function ClubDetailsPage() {
               )}
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   );
 }
