@@ -71,7 +71,7 @@ export const requestJoinClub = async (
   clubId: string,
   message?: string,
 ): Promise<{ message: string; club: Club }> => {
-  const response = await apiClient.post(`/clubs/join-request`, {
+  const response = await apiClient.post(`/membership/join-request`, {
     clubId,
     message,
   });
@@ -89,5 +89,49 @@ export const leaveClub = async (
   clubId: string,
 ): Promise<{ message: string; club: Club }> => {
   const response = await apiClient.post(`/clubs/${clubId}/leave`);
+  return response.data;
+};
+
+export const getPendingJoinRequests = async (
+  clubId: string,
+): Promise<
+  Array<{
+    playerId: string;
+    playerName: string;
+    playerEmail: string;
+    requestedAt: string;
+    status: string;
+  }>
+> => {
+  const response = await apiClient.get(`/clubs/${clubId}/join-requests`);
+  return response.data;
+};
+
+export const reviewJoinRequest = async (
+  clubId: string,
+  playerId: string,
+  approved: boolean,
+  rejectionReason?: string,
+): Promise<{ message: string; club: Club }> => {
+  const response = await apiClient.post(
+    `/clubs/${clubId}/join-request/review`,
+    {
+      playerId,
+      approved,
+      rejectionReason,
+    },
+  );
+  return response.data;
+};
+
+export const updateMemberRole = async (
+  clubId: string,
+  playerId: string,
+  role: "owner" | "co_owner" | "member",
+): Promise<{ message: string; member: any }> => {
+  const response = await apiClient.patch(`/clubs/${clubId}/members/role`, {
+    playerId,
+    role,
+  });
   return response.data;
 };
