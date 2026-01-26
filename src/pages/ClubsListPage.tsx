@@ -55,35 +55,42 @@ export default function ClubsListPage() {
 
   const getUserClubRole = async (clubId: string): Promise<'owner' | 'co_owner' | 'member' | null> => {
     if (!user || !Array.isArray(user.clubs) || user.clubs.length === 0) {
-      console.log('No user or clubs array:', { user: !!user, clubs: user?.clubs });
+      console.log('❌ No user or clubs array:', { user: !!user, clubs: user?.clubs });
       return null;
     }
     
     const firstClub = user.clubs[0];
-    console.log('First club structure:', firstClub);
+    console.log('📋 First club structure:', firstClub);
     
     // Check if clubs are populated with role info (PlayerClubMembership[])
     if (typeof firstClub === 'object' && 'role' in firstClub && 'club' in firstClub) {
       const membership = user.clubs.find((m: any) => {
         const memberClubId = m.club._id || m.club.id;
-        console.log('Checking membership for club:', { memberClubId, clubId, role: m.role });
+        console.log('🔍 Checking membership for club:', { memberClubId, clubId, role: m.role });
         return memberClubId === clubId;
       });
-      console.log('Found membership:', membership);
+      console.log('✅ Found membership:', membership);
       return membership?.role || null;
     }
     
     // Fallback: clubs are just Club objects without role, need to fetch from members API
-    console.log('Clubs not populated with role info, fetching from members API for club:', clubId);
+    console.log(`🔄 Fetching role from members API for club: ${clubId}`);
     try {
       const members = await getClubMembers(clubId);
+      console.log(`📊 Members response for club ${clubId}:`, members);
       const userMember = members.find(
-        (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+        (m) => {
+          const memberPlayerId = (typeof m.playerId === 'object') ? (m.playerId._id || m.playerId.id) : m.playerId;
+          const userId = user._id || user.id;
+          console.log(`   Comparing: ${memberPlayerId} === ${userId}`);
+          return memberPlayerId === userId;
+        }
       );
-      console.log('Found user member from API:', userMember);
+      console.log(`👤 User member found:`, userMember);
+      console.log(`🎭 User role:`, userMember?.role);
       return userMember?.role || null;
     } catch (err) {
-      console.error('Failed to get club members:', err);
+      console.error('❌ Failed to get club members:', err);
       return null;
     }
   };
@@ -91,9 +98,9 @@ export default function ClubsListPage() {
   const loadPendingRequestCounts = async () => {
     if (!user) return;
     
-    console.log('=== Loading Pending Request Counts ===');
-    console.log('User:', user);
-    console.log('Clubs:', clubs);
+    console.log('=== 🚀 Loading Pending Request Counts ===');
+    console.log('User ID:', user._id || user.id);
+    console.log('Total clubs to check:', clubs.length);
     
     const counts: Record<string, number> = {};
     
@@ -101,26 +108,31 @@ export default function ClubsListPage() {
       const clubId = club._id || club.id;
       if (!clubId) continue;
       
+      console.log(`\n--- Checking club: "${club.name}" (${clubId}) ---`);
+      
       try {
         const role = await getUserClubRole(clubId);
-        console.log(`Club "${club.name}" (${clubId}): role = ${role}`);
+        console.log(`⭐ Final role for "${club.name}": ${role}`);
         
         if (role === 'owner' || role === 'co_owner') {
           // User is owner/co-owner, get pending requests
-          console.log(`Fetching pending requests for club ${club.name}...`);
+          console.log(`✅ User is ${role}, fetching pending requests...`);
           const requests = await getPendingJoinRequests(clubId);
-          console.log(`Pending requests for ${club.name}:`, requests);
+          console.log(`📬 Pending requests for ${club.name}:`, requests);
           const pendingCount = requests.filter(req => req.status === 'pending').length;
+          console.log(`📊 Pending count: ${pendingCount}`);
           if (pendingCount > 0) {
             counts[clubId] = pendingCount;
           }
+        } else {
+          console.log(`❌ User is ${role}, skipping pending requests check`);
         }
       } catch (err) {
-        console.error(`Failed to load pending requests for club ${clubId}:`, err);
+        console.error(`❌ Failed to load pending requests for club ${clubId}:`, err);
       }
     }
     
-    console.log('Final pending request counts:', counts);
+    console.log('\n=== 🏁 Final pending request counts ===', counts);
     setPendingRequestCounts(counts);
   };
 
