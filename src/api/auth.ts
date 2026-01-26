@@ -34,6 +34,16 @@ export const getCurrentUser = async (
   return response.data;
 };
 
+export const getPlayerById = async (
+  id: string,
+  populate?: boolean,
+): Promise<Player> => {
+  const response = await apiClient.get<Player>(`/players/${id}`, {
+    params: populate ? { populate: "clubs" } : undefined,
+  });
+  return response.data;
+};
+
 export const logout = (): void => {
   localStorage.removeItem("token");
 };

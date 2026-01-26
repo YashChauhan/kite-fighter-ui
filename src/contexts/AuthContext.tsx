@@ -58,9 +58,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      // Fetch user with populated clubs to get role information
-      const response = await authApi.getCurrentUser(true);
-      setUser(response.data);
+      // First get basic user info to get the user ID
+      const basicUser = await authApi.getCurrentUser();
+      const userId = basicUser.data._id || basicUser.data.id;
+      
+      // Then fetch full user with populated clubs to get role information
+      const userWithClubs = await authApi.getPlayerById(userId, true);
+      setUser(userWithClubs);
     } catch (error) {
       console.error('Failed to fetch user:', error);
       localStorage.removeItem('token');
@@ -75,17 +79,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authApi.login(email, password);
       const newToken = response.data.token;
+      const userId = response.data.player._id || response.data.player.id;
       
       // Set localStorage and token first
       localStorage.setItem('token', newToken);
       setToken(newToken);
       
-      // Fetch user with populated clubs for role information
-      console.log('Fetching user with populated clubs...');
-      const userResponse = await authApi.getCurrentUser(true);
-      console.log('User data with clubs:', userResponse.data);
-      console.log('User clubs:', userResponse.data.clubs);
-      setUser(userResponse.data);
+      // Fetch user via players endpoint with populated clubs for role information
+      console.log('Fetching user with populated clubs from players endpoint...');
+      const userResponse = await authApi.getPlayerById(userId, true);
+      console.log('User data with clubs:', userResponse);
+      console.log('User clubs:', userResponse.clubs);
+      setUser(userResponse);
       setLoading(false);
     } catch (error) {
       throw error;
