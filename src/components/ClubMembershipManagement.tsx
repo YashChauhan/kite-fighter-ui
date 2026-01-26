@@ -261,14 +261,14 @@ export default function ClubMembershipManagement({
       >
         <Tab
           label={
-            <Box display="flex" alignItems="center" gap={1}>
-              Pending Requests
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <span>Pending Requests</span>
               {pendingRequests.length > 0 && (
                 <Chip
                   label={pendingRequests.length}
                   size="small"
                   color="warning"
-                  sx={{ height: 20 }}
+                  sx={{ height: 18, minWidth: 18, '& .MuiChip-label': { px: 0.5 } }}
                 />
               )}
             </Box>
