@@ -293,12 +293,11 @@ export default function ClubMembershipManagement({
                     <ListItem
                       sx={{ 
                         px: 0,
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'flex-start', sm: 'center' },
                         py: 2,
+                        alignItems: 'center',
                       }}
                     >
-                      <Box display="flex" alignItems="center" flex={1} width="100%" mb={{ xs: 1, sm: 0 }}>
+                      <Box display="flex" alignItems="center" flex={1} width="100%">
                         <ListItemAvatar>
                           <Avatar>
                             {request.playerName.charAt(0).toUpperCase()}
@@ -318,7 +317,7 @@ export default function ClubMembershipManagement({
                           }
                         />
                       </Box>
-                      <Box display="flex" gap={1} flexShrink={0}>
+                      <Box display="flex" gap={1} flexShrink={0} ml={1}>
                         <IconButton
                           color="success"
                           onClick={() => handleApproveRequest(request)}
