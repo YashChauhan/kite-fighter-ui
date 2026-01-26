@@ -82,10 +82,9 @@ export default function ClubsListPage() {
       console.log(`🔍 Looking for user ID: ${userId}`);
       
       const userMember = members.find((m) => {
-        // API returns playerId as object with _id, name, email
-        const memberPlayerId = m.playerId._id;
-        console.log(`   Comparing: "${memberPlayerId}" === "${userId}"`);
-        return memberPlayerId === userId;
+        // API returns playerId as a string
+        console.log(`   Comparing: "${m.playerId}" === "${userId}"`);
+        return m.playerId === userId;
       });
       
       console.log(`👤 User member found:`, userMember);

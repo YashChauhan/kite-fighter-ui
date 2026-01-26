@@ -54,13 +54,11 @@ export const getClubMembers = async (
   clubId: string,
 ): Promise<
   Array<{
-    playerId: {
-      _id: string;
-      name: string;
-      email: string;
-    };
+    playerId: string;
     role: "owner" | "co_owner" | "member";
     joinedAt: string;
+    playerName?: string;
+    playerEmail?: string;
   }>
 > => {
   const response = await apiClient.get(`/clubs/${clubId}/members`);
