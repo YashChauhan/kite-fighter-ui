@@ -81,24 +81,13 @@ export default function ClubsListPage() {
       const userId = user._id || user.id;
       console.log(`🔍 Looking for user ID: ${userId}`);
       
-      const userMember = members.find(
-        (m) => {
-          let memberPlayerId: string;
-          
-          if (typeof m.playerId === 'string') {
-            memberPlayerId = m.playerId;
-          } else if (typeof m.playerId === 'object' && m.playerId) {
-            // Try different property names that might contain the ID
-            memberPlayerId = m.playerId._id || m.playerId.id || (m.playerId as any).playerId || '';
-            console.log(`   Player object:`, m.playerId);
-          } else {
-            memberPlayerId = '';
-          }
-          
-          console.log(`   Comparing: ${memberPlayerId} === ${userId}`);
-          return memberPlayerId === userId;
-        }
-      );
+      const userMember = members.find((m) => {
+        // API returns playerId as object with _id, name, email
+        const memberPlayerId = m.playerId._id;
+        console.log(`   Comparing: "${memberPlayerId}" === "${userId}"`);
+        return memberPlayerId === userId;
+      });
+      
       console.log(`👤 User member found:`, userMember);
       console.log(`🎭 User role:`, userMember?.role);
       return userMember?.role || null;
