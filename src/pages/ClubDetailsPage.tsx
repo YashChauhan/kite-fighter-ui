@@ -48,10 +48,10 @@ export default function ClubDetailsPage() {
   const [userRole, setUserRole] = useState<'owner' | 'co_owner' | 'member' | null>(null);
 
   useEffect(() => {
-    if (clubId) {
+    if (clubId && user) {
       loadClubData();
     }
-  }, [clubId]);
+  }, [clubId, user]);
 
   const loadClubData = async () => {
     if (!clubId) return;
@@ -67,14 +67,24 @@ export default function ClubDetailsPage() {
       // Fetch club members with roles
       try {
         const clubMembersData = await getClubMembers(clubId);
+        console.log('Club members data:', clubMembersData);
+        console.log('Current user:', user);
+        
         if (user) {
           const currentUserMember = clubMembersData.find(
-            (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+            (m) => {
+              const memberPlayerId = m.playerId._id || m.playerId;
+              const userId = user._id || user.id;
+              console.log('Comparing:', memberPlayerId, 'with', userId);
+              return memberPlayerId === userId;
+            }
           );
+          console.log('Found user membership:', currentUserMember);
           setUserRole(currentUserMember?.role || null);
+          console.log('Set userRole to:', currentUserMember?.role || null);
         }
       } catch (err) {
-        console.log('Could not fetch club members with roles');
+        console.error('Could not fetch club members with roles:', err);
       }
       
       // Check if players are populated (objects) or just IDs (strings)
@@ -232,6 +242,24 @@ export default function ClubDetailsPage() {
                   </Box>
                 </Box>
               </Box>
+              
+              {/* Debug output */}
+              {process.env.NODE_ENV === 'development' && (
+                <Box mb={2} p={2} bgcolor="grey.100" borderRadius={1}>
+                  <Typography variant="caption" display="block">
+                    Debug Info:
+                  </Typography>
+                  <Typography variant="caption" display="block">
+                    User Role: {userRole || 'null'}
+                  </Typography>
+                  <Typography variant="caption" display="block">
+                    isOwnerOrCoOwner(): {isOwnerOrCoOwner().toString()}
+                  </Typography>
+                  <Typography variant="caption" display="block">
+                    User ID: {user?._id || user?.id || 'null'}
+                  </Typography>
+                </Box>
+              )}
               
               {isOwnerOrCoOwner() && (
                 <Tabs

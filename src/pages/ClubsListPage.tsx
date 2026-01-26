@@ -15,15 +15,17 @@ import {
   InputAdornment,
   Avatar,
   Pagination,
+  Badge,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   People as PeopleIcon,
   CalendarToday as CalendarIcon,
   Settings as SettingsIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getClubs } from '../api/clubs';
+import { getClubs, getPendingJoinRequests, getClubMembers } from '../api/clubs';
 import type { Club } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -37,11 +39,51 @@ export default function ClubsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [pendingRequestCounts, setPendingRequestCounts] = useState<Record<string, number>>({});
   const limit = 12;
 
   useEffect(() => {
     loadClubs();
   }, [page, searchTerm]);
+
+  useEffect(() => {
+    // Load pending request counts for clubs where user is owner/co-owner
+    if (user && clubs.length > 0) {
+      loadPendingRequestCounts();
+    }
+  }, [clubs, user]);
+
+  const loadPendingRequestCounts = async () => {
+    if (!user) return;
+    
+    const counts: Record<string, number> = {};
+    
+    for (const club of clubs) {
+      const clubId = club._id || club.id;
+      if (!clubId) continue;
+      
+      try {
+        // Check if user is owner or co-owner
+        const members = await getClubMembers(clubId);
+        const userMember = members.find(
+          (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+        );
+        
+        if (userMember && (userMember.role === 'owner' || userMember.role === 'co_owner')) {
+          // User is owner/co-owner, get pending requests
+          const requests = await getPendingJoinRequests(clubId);
+          const pendingCount = requests.filter(req => req.status === 'pending').length;
+          if (pendingCount > 0) {
+            counts[clubId] = pendingCount;
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to load pending requests for club ${clubId}:`, err);
+      }
+    }
+    
+    setPendingRequestCounts(counts);
+  };
 
   const loadClubs = async () => {
     try {
@@ -155,6 +197,22 @@ export default function ClubsListPage() {
                       sx={{
                         position: 'absolute',
                         top: 12,
+                        right: 12,
+                        zIndex: 1,
+                      }}
+                    />
+                  )}
+                  
+                  {/* Show pending join request badge for owners/co-owners */}
+                  {pendingRequestCounts[(club._id || club.id) as string] > 0 && (
+                    <Chip
+                      icon={<NotificationsIcon />}
+                      label={`${pendingRequestCounts[(club._id || club.id) as string]} pending request${pendingRequestCounts[(club._id || club.id) as string] > 1 ? 's' : ''}`}
+                      color="warning"
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: isOwner(club) ? 44 : 12,
                         right: 12,
                         zIndex: 1,
                       }}
