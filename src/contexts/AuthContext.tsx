@@ -79,9 +79,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Set localStorage first
       localStorage.setItem('token', newToken);
       
-      // Update state - this will trigger useEffect but we already have the user
+      // Update state synchronously
       setToken(newToken);
       setUser(newUser);
+      setLoading(false);
     } catch (error) {
       throw error;
     }
@@ -94,16 +95,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Only fetch user if we have token but no user data
-    if (token && !user) {
-      refreshUser();
-    } else if (!token) {
-      setLoading(false);
-    } else {
-      // We have both token and user (from login), just set loading false
-      setLoading(false);
-    }
-  }, [token, user]);
+    // Only run on initial mount
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken && !user) {
+        // We have a token but no user (page refresh scenario)
+        await refreshUser();
+      } else {
+        setLoading(false);
+      }
+    };
+    
+    initAuth();
+  }, []); // Empty dependency array - only run once on mount
 
   const value = {
     user,
