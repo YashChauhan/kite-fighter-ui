@@ -80,6 +80,10 @@ export default function ClubsListPage() {
   const loadPendingRequestCounts = async () => {
     if (!user) return;
     
+    console.log('=== Loading Pending Request Counts ===');
+    console.log('User:', user);
+    console.log('Clubs:', clubs);
+    
     const counts: Record<string, number> = {};
     
     for (const club of clubs) {
@@ -88,10 +92,13 @@ export default function ClubsListPage() {
       
       try {
         const role = getUserClubRole(clubId);
+        console.log(`Club "${club.name}" (${clubId}): role = ${role}`);
         
         if (role === 'owner' || role === 'co_owner') {
           // User is owner/co-owner, get pending requests
+          console.log(`Fetching pending requests for club ${club.name}...`);
           const requests = await getPendingJoinRequests(clubId);
+          console.log(`Pending requests for ${club.name}:`, requests);
           const pendingCount = requests.filter(req => req.status === 'pending').length;
           if (pendingCount > 0) {
             counts[clubId] = pendingCount;
@@ -102,6 +109,7 @@ export default function ClubsListPage() {
       }
     }
     
+    console.log('Final pending request counts:', counts);
     setPendingRequestCounts(counts);
   };
 
@@ -164,6 +172,28 @@ export default function ClubsListPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* DEBUG PANEL - Remove after testing */}
+      {process.env.NODE_ENV === 'development' && user && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" fontWeight="bold">DEBUG INFO:</Typography>
+          <Typography variant="caption" display="block">
+            User ID: {user._id || user.id}
+          </Typography>
+          <Typography variant="caption" display="block">
+            User clubs count: {Array.isArray(user.clubs) ? user.clubs.length : 0}
+          </Typography>
+          <Typography variant="caption" display="block">
+            User clubs data: {JSON.stringify(user.clubs, null, 2).substring(0, 300)}...
+          </Typography>
+          <Typography variant="caption" display="block">
+            Pending request counts: {JSON.stringify(pendingRequestCounts)}
+          </Typography>
+          <Typography variant="caption" display="block">
+            Total clubs on page: {clubs.length}
+          </Typography>
+        </Alert>
+      )}
+
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Kite Fighter Clubs
