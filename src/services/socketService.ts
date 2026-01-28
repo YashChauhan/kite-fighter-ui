@@ -1,6 +1,14 @@
 const SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL || "ws://localhost:3000/api/v1/ws/matches";
 
+// Log WebSocket configuration in development
+if (import.meta.env.VITE_ENVIRONMENT === "development") {
+  console.log(`🔌 WebSocket URL: ${SOCKET_URL}`);
+  console.log(
+    `🔌 VITE_SOCKET_URL env: ${import.meta.env.VITE_SOCKET_URL || "not set"}`,
+  );
+}
+
 type EventCallback = (data: any) => void;
 
 interface WSMessage {
@@ -21,21 +29,30 @@ class SocketService {
   private subscribedMatches: Set<string> = new Set();
 
   connect(): void {
-    if (this.socket?.readyState === WebSocket.OPEN) return;
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      console.log("✅ WebSocket already connected");
+      return;
+    }
 
     const token = localStorage.getItem("token");
     const url = token ? `${SOCKET_URL}?token=${token}` : SOCKET_URL;
+
+    console.log("🔌 Attempting to connect WebSocket to:", url);
+    console.log("🔑 Token present:", !!token);
+    console.log("🔗 Base SOCKET_URL:", SOCKET_URL);
 
     try {
       this.socket = new WebSocket(url);
       this.setupListeners();
     } catch (error) {
-      console.error("WebSocket connection error:", error);
+      console.error("❌ WebSocket connection error:", error);
       this.handleReconnect();
     }
   }
 
   disconnect(): void {
+    console.log("🔌 Disconnecting WebSocket...");
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -53,24 +70,31 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.onopen = () => {
+      console.log("✅ WebSocket connected successfully");
       this.connected = true;
       this.reconnectAttempts = 0;
       this.emit("connect", null);
 
       // Re-subscribe to matches after reconnection
       this.subscribedMatches.forEach((matchId) => {
+        console.log(`🔄 Re-subscribing to match: ${matchId}`);
         this.subscribeToMatch(matchId);
       });
     };
 
-    this.socket.onclose = () => {
+    this.socket.onclose = (event) => {
+      console.log("❌ WebSocket closed:", event.code, event.reason);
       this.connected = false;
       this.emit("disconnect", null);
-      this.handleReconnect();
+
+      // Only attempt reconnect if not a normal closure
+      if (event.code !== 1000) {
+        this.handleReconnect();
+      }
     };
 
     this.socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
+      console.error("❌ WebSocket error:", error);
       this.emit("error", error);
     };
 
@@ -95,7 +119,9 @@ class SocketService {
 
   private handleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("Max reconnection attempts reached");
+      console.error(
+        "❌ Max reconnection attempts reached. WebSocket will not reconnect automatically.",
+      );
       return;
     }
 
@@ -103,7 +129,7 @@ class SocketService {
     const delay = this.reconnectDelay * this.reconnectAttempts;
 
     console.log(
-      `Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+      `🔄 Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
     );
 
     this.reconnectTimeout = window.setTimeout(() => {
@@ -113,13 +139,18 @@ class SocketService {
 
   private send(message: any): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
+      console.log("📤 Sending WebSocket message:", message);
       this.socket.send(JSON.stringify(message));
     } else {
-      console.warn("WebSocket is not connected");
+      console.warn(
+        "⚠️ WebSocket is not connected. Cannot send message:",
+        message,
+      );
     }
   }
 
   subscribeToMatch(matchId: string): void {
+    console.log(`📬 Subscribing to match: ${matchId}`);
     this.subscribedMatches.add(matchId);
     this.send({
       type: "subscribe",
@@ -128,6 +159,7 @@ class SocketService {
   }
 
   unsubscribeFromMatch(matchId: string): void {
+    console.log(`📪 Unsubscribing from match: ${matchId}`);
     this.subscribedMatches.delete(matchId);
     this.send({
       type: "unsubscribe",
@@ -218,6 +250,19 @@ class SocketService {
 
   onMatchCancelled(callback: EventCallback): () => void {
     return this.on("match:cancelled", callback);
+  }
+
+  // Roster management events
+  onPlayersAdded(callback: EventCallback): () => void {
+    return this.on("match:players_added", callback);
+  }
+
+  onPlayersRemoved(callback: EventCallback): () => void {
+    return this.on("match:players_removed", callback);
+  }
+
+  onCaptainChanged(callback: EventCallback): () => void {
+    return this.on("match:captain_changed", callback);
   }
 
   // Fight events (using documentation format)

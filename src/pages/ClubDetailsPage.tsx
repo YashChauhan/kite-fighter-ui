@@ -391,16 +391,12 @@ export default function ClubDetailsPage() {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <Typography variant="body2">{member.name}</Typography>
-                          {member.isOwner && (
-                            <Chip label="Owner" size="small" color="primary" sx={{ height: 18 }} />
-                          )}
-                        </Box>
-                      }
+                      primary={member.name}
                       primaryTypographyProps={{ variant: 'body2' }}
                     />
+                    {member.isOwner && (
+                      <Chip label="Owner" size="small" color="primary" sx={{ height: 18 }} />
+                    )}
                   </ListItem>
                 ))}
               </List>

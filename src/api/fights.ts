@@ -17,7 +17,20 @@ export const getFights = async (params: {
   const response = await apiClient.get(url, {
     params: { playerId, status },
   });
-  return response.data;
+
+  // Handle both response formats:
+  // 1. Backend returns array directly: [{...}, {...}]
+  // 2. Backend returns wrapped: { data: [{...}, {...}] }
+  if (Array.isArray(response.data)) {
+    console.log("✅ Fights API returned array directly");
+    return { data: response.data };
+  } else if (response.data?.data && Array.isArray(response.data.data)) {
+    console.log("✅ Fights API returned wrapped data");
+    return response.data;
+  } else {
+    console.error("❌ Unexpected fights API response:", response.data);
+    return { data: [] };
+  }
 };
 
 export const getFightById = async (id: string): Promise<Fight> => {
@@ -27,20 +40,27 @@ export const getFightById = async (id: string): Promise<Fight> => {
 
 export const reportFight = async (data: {
   matchId: string;
-  player1: string;
-  player2: string;
+  reporterId: string;
+  player1Id: string;
+  player2Id: string;
   result: FightResult;
+  resultNote?: string;
 }): Promise<Fight> => {
   const response = await apiClient.post<Fight>("/fights", data);
   return response.data;
 };
 
-export const confirmFight = async (
-  fightId: string,
-  decision: "accept" | "dispute",
-): Promise<Fight> => {
+export const confirmFight = async (data: {
+  fightId: string;
+  captainId: string;
+  agreedResult: FightResult;
+  notes?: string;
+}): Promise<Fight> => {
+  const { fightId, captainId, agreedResult, notes } = data;
   const response = await apiClient.post<Fight>(`/fights/${fightId}/confirm`, {
-    decision,
+    captainId,
+    agreedResult,
+    notes,
   });
   return response.data;
 };

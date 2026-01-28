@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Grid,
@@ -25,10 +25,11 @@ import {
   Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getClubs, getPendingJoinRequests, getClubMembers } from '../api/clubs';
+import { getClubs, getPendingJoinRequests } from '../api/clubs';
 import type { Club } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
+import { getUserClubRole, isUserMemberOfClub } from '../utils/clubPermissions';
 
 export default function ClubsListPage() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function ClubsListPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [pendingRequestCounts, setPendingRequestCounts] = useState<Record<string, number>>({});
   const limit = 12;
+  const loadingRequestsRef = useRef(false);
 
   useEffect(() => {
     loadClubs();
@@ -48,73 +50,16 @@ export default function ClubsListPage() {
 
   useEffect(() => {
     // Load pending request counts for clubs where user is owner/co-owner
-    if (user && clubs.length > 0) {
+    // Only run once per clubs array change, not on every re-render
+    if (user && clubs.length > 0 && !loadingRequestsRef.current) {
       loadPendingRequestCounts();
     }
-  }, [clubs, user]);
-
-  const getUserClubRole = async (clubId: string): Promise<'owner' | 'co_owner' | 'member' | null> => {
-    if (!user || !Array.isArray(user.clubs) || user.clubs.length === 0) {
-      console.log('❌ No user or clubs array:', { user: !!user, clubs: user?.clubs });
-      return null;
-    }
-    
-    const firstClub = user.clubs[0];
-    console.log('📋 First club structure:', firstClub);
-    
-    // Check if clubs are populated with role info (PlayerClubMembership[])
-    if (typeof firstClub === 'object' && 'role' in firstClub && 'club' in firstClub) {
-      const membership = user.clubs.find((m: any) => {
-        const memberClubId = m.club._id || m.club.id;
-        console.log('🔍 Checking membership for club:', { memberClubId, clubId, role: m.role });
-        return memberClubId === clubId;
-      });
-      console.log('✅ Found membership:', membership);
-      return membership?.role || null;
-    }
-    
-    // Fallback: clubs are just Club objects without role, need to fetch from members API
-    console.log(`🔄 Fetching role from members API for club: ${clubId}`);
-    try {
-      const members = await getClubMembers(clubId);
-      console.log(`📊 Members response for club ${clubId}:`, members);
-      const userId = user._id || user.id;
-      console.log(`🔍 Looking for user ID: ${userId}`);
-      
-      const userMember = members.find((m) => {
-        // API returns playerId as a string
-        console.log(`   Comparing: "${m.playerId}" === "${userId}"`);
-        return m.playerId === userId;
-      });
-      
-      console.log(`👤 User member found:`, userMember);
-      console.log(`🎭 User role:`, userMember?.role);
-      return userMember?.role || null;
-    } catch (err) {
-      console.error('❌ Failed to get club members:', err);
-      return null;
-    }
-  };
-
-  const isUserMemberOfClub = (clubId: string): boolean => {
-    if (!user || !Array.isArray(user.clubs)) return false;
-    
-    return user.clubs.some((c: any) => {
-      // Handle different club formats
-      if (typeof c === 'string') {
-        return c === clubId;
-      } else if (typeof c === 'object' && 'club' in c) {
-        return (c.club._id || c.club.id) === clubId;
-      } else if (typeof c === 'object') {
-        return (c._id || c.id) === clubId;
-      }
-      return false;
-    });
-  };
+  }, [clubs.length, user?._id]);
 
   const loadPendingRequestCounts = async () => {
-    if (!user) return;
+    if (!user || loadingRequestsRef.current) return;
     
+    loadingRequestsRef.current = true;
     console.log('=== 🚀 Loading Pending Request Counts ===');
     console.log('User ID:', user._id || user.id);
     console.log('User clubs:', user.clubs);
@@ -127,7 +72,7 @@ export default function ClubsListPage() {
       if (!clubId) continue;
       
       // Skip clubs user is not a member of
-      if (!isUserMemberOfClub(clubId)) {
+      if (!isUserMemberOfClub(user, clubId)) {
         console.log(`⏭️  Skipping "${club.name}" - user is not a member`);
         continue;
       }
@@ -135,7 +80,7 @@ export default function ClubsListPage() {
       console.log(`\n--- Checking club: "${club.name}" (${clubId}) ---`);
       
       try {
-        const role = await getUserClubRole(clubId);
+        const role = await getUserClubRole(user, clubId);
         console.log(`⭐ Final role for "${club.name}": ${role}`);
         
         if (role === 'owner' || role === 'co_owner') {
@@ -158,6 +103,7 @@ export default function ClubsListPage() {
     
     console.log('\n=== 🏁 Final pending request counts ===', counts);
     setPendingRequestCounts(counts);
+    loadingRequestsRef.current = false;
   };
 
   const loadClubs = async () => {
@@ -218,7 +164,7 @@ export default function ClubsListPage() {
   }
 
   return (
-    <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
       {/* DEBUG PANEL - Remove after testing */}
       {process.env.NODE_ENV === 'development' && user && (
         <Alert severity="info" sx={{ mb: 3 }}>
@@ -301,11 +247,12 @@ export default function ClubsListPage() {
         <Alert severity="info">No clubs found</Alert>
       ) : (
         <>
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
             {clubs.map((club) => (
-              <Grid item xs={12} sm={6} md={4} key={club._id || club.id}>
+              <Grid item xs={12} key={club._id || club.id} sx={{ width: '100%' }}>
                 <Card 
                   sx={{ 
+                    width: '100%',
                     height: '100%', 
                     display: 'flex', 
                     flexDirection: 'column',
