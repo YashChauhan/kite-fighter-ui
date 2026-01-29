@@ -21,31 +21,33 @@ export const MatchType = {
 export type MatchType = (typeof MatchType)[keyof typeof MatchType];
 
 export const MatchStatus = {
-  PENDING_CAPTAIN_CONFIRMATION: "PENDING_CAPTAIN_CONFIRMATION",
-  PENDING_PARTICIPANTS: "PENDING_PARTICIPANTS",
-  ACTIVE: "ACTIVE",
-  COMPLETED: "COMPLETED",
-  CANCELLED: "CANCELLED",
-  SCHEDULED: "PENDING_CAPTAIN_CONFIRMATION", // Alias for compatibility
-  LIVE: "ACTIVE", // Alias for compatibility
-  DISPUTED: "DISPUTED" as any, // For dispute status
+  PENDING_CAPTAIN_CONFIRMATION: "pending_captain_confirmation",
+  PENDING_PARTICIPANTS: "pending_participants",
+  READY_TO_START: "ready_to_start",
+  READY: "ready_to_start", // Alias for ready_to_start
+  ACTIVE: "active",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+  SCHEDULED: "pending_captain_confirmation", // Alias for compatibility
+  LIVE: "active", // Alias for compatibility
+  DISPUTED: "disputed" as any, // For dispute status
 } as const;
 export type MatchStatus = (typeof MatchStatus)[keyof typeof MatchStatus];
 
 export const FightStatus = {
-  PENDING_CAPTAIN_CONFIRMATION: "PENDING_CAPTAIN_CONFIRMATION",
-  CONFIRMED: "CONFIRMED",
-  DISPUTED: "DISPUTED",
-  ADMIN_RESOLVED: "ADMIN_RESOLVED",
+  PENDING_CAPTAIN_CONFIRMATION: "pending_captain_confirmation",
+  CONFIRMED: "confirmed",
+  DISPUTED: "disputed",
+  ADMIN_RESOLVED: "admin_resolved",
 } as const;
 export type FightStatus = (typeof FightStatus)[keyof typeof FightStatus];
 
 export const FightResult = {
-  PLAYER1_WIN: "PLAYER1_WIN",
-  PLAYER2_WIN: "PLAYER2_WIN",
-  DRAW: "DRAW",
-  TEAM1_WIN: "PLAYER1_WIN", // Alias for compatibility
-  TEAM2_WIN: "PLAYER2_WIN", // Alias for compatibility
+  PLAYER1_WIN: "player1",
+  PLAYER2_WIN: "player2",
+  DRAW: "draw",
+  TEAM1_WIN: "player1", // Alias for compatibility
+  TEAM2_WIN: "player2", // Alias for compatibility
 } as const;
 export type FightResult = (typeof FightResult)[keyof typeof FightResult];
 
@@ -177,42 +179,118 @@ export interface Club {
   updatedAt: string;
 }
 
+export interface MatchPlayer {
+  playerId: Player | string;
+  playerName: string;
+  confirmationStatus: "pending" | "confirmed" | "declined";
+  confirmedAt?: string;
+  enteringStreak: number;
+  currentStreak: number;
+  currentTier: StarType | null;
+  isCaptain?: boolean;
+}
+
 export interface Team {
+  _id?: string;
   teamId: string;
   teamName: string;
-  club: Club;
-  clubId?: string;
-  players: Player[];
-  captain: Player;
+  club?: Club;
+  clubId?: string | Club;
+  players?: MatchPlayer[];
+  captain?: {
+    playerId: Player | string;
+    confirmationStatus: "pending" | "confirmed" | "declined";
+    promotedFrom: string;
+  };
+}
+
+export interface ResultDeclaration {
+  captainId: string;
+  teamId: string;
+  declaredWinner: string;
+  declaredAt: string;
+  confirmationRound: 1 | 2;
+}
+
+export interface MatchResult {
+  status: "pending" | "agreed" | "disputed" | "resolved";
+  winningTeamId?: string;
+  declarations: ResultDeclaration[];
+  finalizedAt?: string;
 }
 
 export interface Match {
   id: string;
   _id?: string;
-  team1: Team;
-  team2: Team;
+  name?: string;
+  description?: string;
+  organizerId?: Player | string;
+  teams: [Team, Team];
+  // Legacy support for old structure
+  team1?: Team;
+  team2?: Team;
   type: MatchType;
   matchType?: MatchType;
   status: MatchStatus;
-  scheduledAt: string;
+  scheduledAt?: string;
   matchDate?: string;
   winnerTeam?: number;
   winner?: "team1" | "team2" | "draw";
+  matchResult?: MatchResult;
+  involvedClubs?: Club[];
+  statistics?: any[];
+  allParticipants?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CaptainConfirmation {
+  captainId: string;
+  captainName: string;
+  teamId: string;
+  agreedResult: FightResult;
+  confirmedAt: string;
+  notes?: string;
+  confirmationOrder: 1 | 2;
 }
 
 export interface Fight {
   id: string;
   _id?: string;
   matchId: string;
+  matchType?: MatchType;
+  reportedBy?: {
+    playerId: string;
+    playerName: string;
+    reporterRole: "captain_primary" | "captain_secondary" | "player";
+  };
   team1Player: Player;
   team2Player: Player;
-  player1?: Player;
-  player2?: Player;
+  player1?:
+    | Player
+    | {
+        playerId: string;
+        playerName: string;
+        teamId: string;
+        teamName: string;
+      };
+  player2?:
+    | Player
+    | {
+        playerId: string;
+        playerName: string;
+        teamId: string;
+        teamName: string;
+      };
   result: FightResult;
+  proposedResult?: FightResult;
   winner: Player;
   status: FightStatus;
+  captainConfirmations?: CaptainConfirmation[];
+  disputeDetails?: {
+    reason: string;
+  };
+  resultNote?: string;
   reportedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -240,4 +318,13 @@ export interface ApiError {
   statusCode: number;
   code: string;
   message: string;
+}
+
+export interface BulkOperationResponse<T = Match> {
+  success: string[];
+  failed: Array<{
+    playerId: string;
+    reason: string;
+  }>;
+  match?: T;
 }

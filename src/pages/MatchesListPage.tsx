@@ -37,6 +37,7 @@ import { useCanModify, useCanCreateMatch } from '../hooks/useCanModify';
 import { offlineService } from '../services/offlineService';
 import notificationService from '../services/notificationService';
 import { EmptyState } from '../components/EmptyState';
+import CreateMatchDialog from '../components/CreateMatchDialog';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -71,6 +72,7 @@ export default function MatchesListPage() {
   const [filters, setFilters] = useState<Filters>({
     myMatches: false,
   });
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.5,
@@ -129,6 +131,7 @@ export default function MatchesListPage() {
 
       const response = await getMatches(params);
 
+      // Use the matches as-is from the API (no need for validation since we're only using basic fields)
       if (reset) {
         setMatches(response.data);
       } else {
@@ -364,10 +367,10 @@ export default function MatchesListPage() {
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                     <Box flex={1}>
                       <Typography variant="h6" component="h2" gutterBottom>
-                        {match.team1.club.name} vs {match.team2.club.name}
+                        {match.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {format(new Date(match.scheduledAt), 'PPp')}
+                        {format(new Date(match.scheduledAt || match.matchDate), 'PPp')}
                       </Typography>
                     </Box>
                     <IconButton
@@ -389,31 +392,17 @@ export default function MatchesListPage() {
                       size="small"
                     />
                     <Chip
-                      label={getTypeLabel(match.type)}
+                      label={getTypeLabel(match.type || match.matchType)}
                       variant="outlined"
                       size="small"
                     />
                     {match.status === MatchStatus.COMPLETED && match.winnerTeam && (
                       <Chip
-                        label={`Winner: ${match.winnerTeam === 1 ? match.team1.club.name : match.team2.club.name}`}
+                        label={`Winner: Team ${match.winnerTeam}`}
                         color="success"
                         size="small"
                       />
                     )}
-                  </Box>
-
-                  {/* Team Info */}
-                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Team 1: {match.team1.players.length} players
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Team 2: {match.team2.players.length} players
-                      </Typography>
-                    </Box>
                   </Box>
                 </CardContent>
               </Card>
@@ -439,11 +428,23 @@ export default function MatchesListPage() {
             bottom: isMobile ? 72 : 16,
             right: 16,
           }}
-          onClick={() => navigate('/matches/create')}
+          onClick={() => setCreateDialogOpen(true)}
         >
           <AddIcon />
         </Fab>
       )}
+
+      {/* Create Match Dialog */}
+      <CreateMatchDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => {
+          // Refresh matches list after successful creation
+          setPage(1);
+          setMatches([]);
+          loadMatches(1);
+        }}
+      />
     </Box>
   );
 }

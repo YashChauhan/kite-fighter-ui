@@ -19,6 +19,8 @@ import notificationService from '../services/notificationService';
 
 interface RecordFightFormProps {
   matchId: string;
+  currentUserId: string;
+  matchStatus: string;
   team1Players: Player[];
   team2Players: Player[];
   onSuccess: () => void;
@@ -27,6 +29,8 @@ interface RecordFightFormProps {
 
 export default function RecordFightForm({
   matchId,
+  currentUserId,
+  matchStatus,
   team1Players,
   team2Players,
   onSuccess,
@@ -35,13 +39,45 @@ export default function RecordFightForm({
   const [team1Player, setTeam1Player] = useState<Player | null>(null);
   const [team2Player, setTeam2Player] = useState<Player | null>(null);
   const [result, setResult] = useState<FightResult | null>(null);
+  const [resultNote, setResultNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Validation function
+  const canReportFight = () => {
+    // 1. Match must be active
+    if (matchStatus !== 'active') {
+      return {
+        allowed: false,
+        reason: 'Fight can only be reported during active matches'
+      };
+    }
+
+    // 2. Both fighters must be different
+    if (team1Player && team2Player && 
+        (team1Player._id || team1Player.id) === (team2Player._id || team2Player.id)) {
+      return {
+        allowed: false,
+        reason: 'Cannot report a fight between the same player'
+      };
+    }
+
+    // Note: Backend will validate if reporter is a participant and players are confirmed
+    return { allowed: true };
+  };
 
   const handleSubmit = async () => {
     setError(null);
 
-    // Validation
+    // Run validations
+    const validation = canReportFight();
+    if (!validation.allowed) {
+      setError(validation.reason || 'Cannot report fight');
+      notificationService.error(validation.reason || 'Cannot report fight');
+      return;
+    }
+
+    // Field validation
     if (!team1Player || !team2Player) {
       setError('Please select both players');
       return;
@@ -55,32 +91,41 @@ export default function RecordFightForm({
     try {
       setSubmitting(true);
 
-      const winnerId =
-        result === FightResult.TEAM1_WIN
-          ? (team1Player._id || team1Player.id)
-          : result === FightResult.TEAM2_WIN
-            ? (team2Player._id || team2Player.id)
-            : undefined;
+      const player1Id = (team1Player._id || team1Player.id) as string;
+      const player2Id = (team2Player._id || team2Player.id) as string;
 
-      if (!winnerId && result !== FightResult.DRAW) {
-        setError('Invalid result selection');
+      if (!player1Id || !player2Id) {
+        setError('Invalid player selection');
         return;
       }
 
       await reportFight({
         matchId,
-        player1: (team1Player.id || team1Player._id) as string,
-        player2: (team2Player.id || team2Player._id) as string,
+        reporterId: currentUserId,
+        player1Id,
+        player2Id,
         result,
+        resultNote: resultNote.trim() || undefined,
       });
 
-      notificationService.success('Fight recorded successfully');
+      notificationService.success('✅ Fight reported! Waiting for captain confirmation.');
       onSuccess();
     } catch (err: any) {
       console.error('Failed to report fight:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to record fight';
-      setError(errorMessage);
-      notificationService.error(errorMessage);
+      const errorMessage = err.response?.data?.message || '';
+      
+      // Handle specific error cases
+      if (errorMessage.includes('Reporter must be')) {
+        setError('You must be a match participant to report fights');
+      } else if (errorMessage.includes('Both players must be')) {
+        setError('Both fighters must be confirmed match participants');
+      } else if (errorMessage.includes('not found') || errorMessage.includes('not active')) {
+        setError('Match not found or is no longer active');
+      } else {
+        setError(errorMessage || 'Failed to record fight');
+      }
+      
+      notificationService.error(errorMessage || 'Failed to record fight');
     } finally {
       setSubmitting(false);
     }
@@ -112,18 +157,21 @@ export default function RecordFightForm({
             helperText="Select player from team 1"
           />
         )}
-        renderOption={(props, player) => (
-          <Box component="li" {...props}>
-            <Box display="flex" alignItems="center" gap={1} width="100%">
-              <Typography flex={1}>{player.name}</Typography>
-              {player.currentStreak && player.currentStreak.count > 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  {player.currentStreak.count} streak
-                </Typography>
-              )}
+        renderOption={(props, player) => {
+          const { key, ...optionProps } = props;
+          return (
+            <Box component="li" key={key} {...optionProps}>
+              <Box display="flex" alignItems="center" gap={1} width="100%">
+                <Typography flex={1}>{player.name}</Typography>
+                {player.currentStreak && player.currentStreak.count > 0 && (
+                  <Typography variant="caption" color="text.secondary">
+                    {player.currentStreak.count} streak
+                  </Typography>
+                )}
+              </Box>
             </Box>
-          </Box>
-        )}
+          );
+        }}
         sx={{ mb: 2 }}
         fullWidth
       />
@@ -149,18 +197,21 @@ export default function RecordFightForm({
             helperText="Select player from team 2"
           />
         )}
-        renderOption={(props, player) => (
-          <Box component="li" {...props}>
-            <Box display="flex" alignItems="center" gap={1} width="100%">
-              <Typography flex={1}>{player.name}</Typography>
-              {player.currentStreak && player.currentStreak.count > 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  {player.currentStreak.count} streak
-                </Typography>
-              )}
+        renderOption={(props, player) => {
+          const { key, ...optionProps } = props;
+          return (
+            <Box component="li" key={key} {...optionProps}>
+              <Box display="flex" alignItems="center" gap={1} width="100%">
+                <Typography flex={1}>{player.name}</Typography>
+                {player.currentStreak && player.currentStreak.count > 0 && (
+                  <Typography variant="caption" color="text.secondary">
+                    {player.currentStreak.count} streak
+                  </Typography>
+                )}
+              </Box>
             </Box>
-          </Box>
-        )}
+          );
+        }}
         sx={{ mb: 3 }}
         fullWidth
       />
@@ -195,6 +246,20 @@ export default function RecordFightForm({
         </ToggleButton>
       </ToggleButtonGroup>
 
+      {/* Result Note (Optional) */}
+      <TextField
+        label="Notes (Optional)"
+        multiline
+        rows={3}
+        value={resultNote}
+        onChange={(e) => setResultNote(e.target.value)}
+        placeholder="Add any details about the fight..."
+        helperText={`${resultNote.length}/500 characters`}
+        inputProps={{ maxLength: 500 }}
+        fullWidth
+        sx={{ mb: 3 }}
+      />
+
       {/* Action Buttons */}
       <Box display="flex" gap={2}>
         <Button
@@ -216,8 +281,7 @@ export default function RecordFightForm({
       </Box>
 
       <Alert severity="info" sx={{ mt: 2 }}>
-        The fight will be pending until the other team's captain confirms the
-        result.
+        ⏳ Fight will be pending captain confirmation. Both team captains must confirm the result.
       </Alert>
     </Box>
   );

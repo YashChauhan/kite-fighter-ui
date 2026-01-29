@@ -89,7 +89,7 @@ export default function PlayersListPage() {
   }
 
   return (
-    <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Kite Fighter Players
@@ -124,15 +124,16 @@ export default function PlayersListPage() {
         <Alert severity="info">No players found</Alert>
       ) : (
         <>
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
             {players.map((player) => {
               const totalFights = getTotalFights(player);
               const winRate = getWinRate(player);
               
               return (
-                <Grid item xs={12} sm={6} md={4} key={player._id || player.id}>
+                <Grid item xs={12} key={player._id || player.id} sx={{ width: '100%' }}>
                   <Card 
                     sx={{ 
+                      width: '100%',
                       height: '100%', 
                       display: 'flex', 
                       flexDirection: 'column',
