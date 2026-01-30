@@ -8,6 +8,13 @@ vi.mock('../../api/auth', () => ({
   register: vi.fn(),
 }));
 
+// Mock the auth context
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    login: vi.fn(),
+  }),
+}));
+
 // Mock navigate
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
