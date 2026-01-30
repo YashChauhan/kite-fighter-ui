@@ -5,6 +5,7 @@ export interface MatchNotifications {
   needsCaptainConfirmation: boolean;
   needsPlayerConfirmation: boolean;
   canStart: boolean;
+  hasPendingActions: boolean; // Generic pending actions for active matches
   totalPending: number;
 }
 
@@ -19,15 +20,28 @@ export const getMatchNotifications = (
     needsCaptainConfirmation: false,
     needsPlayerConfirmation: false,
     canStart: false,
+    hasPendingActions: false,
     totalPending: 0,
   };
 
   if (!userId || !match) return notifications;
 
+  const teams = match.teams || [match.team1, match.team2].filter(Boolean);
+
+  // Helper: Check if user is a captain
+  const isUserCaptain = teams.some((team) => {
+    if (!team?.captain) return false;
+
+    const captainId =
+      typeof team.captain.playerId === "string"
+        ? team.captain.playerId
+        : team.captain.playerId?._id || team.captain.playerId?.id;
+
+    return captainId === userId;
+  });
+
   // Check captain confirmation needed
   if (match.status === MatchStatus.PENDING_CAPTAIN_CONFIRMATION) {
-    const teams = match.teams || [match.team1, match.team2].filter(Boolean);
-
     teams.forEach((team) => {
       if (!team?.captain) return;
 
@@ -51,8 +65,6 @@ export const getMatchNotifications = (
     match.status === MatchStatus.PENDING_PARTICIPANTS ||
     match.status === MatchStatus.PENDING_CAPTAIN_CONFIRMATION
   ) {
-    const teams = match.teams || [match.team1, match.team2].filter(Boolean);
-
     teams.forEach((team) => {
       if (!team?.players) return;
 
@@ -73,8 +85,6 @@ export const getMatchNotifications = (
 
   // Check if user can start match
   if (match.status === MatchStatus.READY_TO_START) {
-    const teams = match.teams || [match.team1, match.team2].filter(Boolean);
-
     teams.forEach((team) => {
       if (!team?.captain) return;
 
@@ -87,6 +97,16 @@ export const getMatchNotifications = (
         notifications.canStart = true;
       }
     });
+  }
+
+  // Check for active matches where user is a captain
+  // (likely has pending fight confirmations)
+  if (
+    (match.status === MatchStatus.ACTIVE || match.status === MatchStatus.LIVE) &&
+    isUserCaptain
+  ) {
+    notifications.hasPendingActions = true;
+    notifications.totalPending++;
   }
 
   return notifications;
@@ -106,6 +126,9 @@ export const getNotificationLabel = (
   }
   if (notifications.canStart) {
     return "Ready to Start";
+  }
+  if (notifications.hasPendingActions) {
+    return "Action Required";
   }
   if (notifications.totalPending > 0) {
     return `${notifications.totalPending} Pending`;
