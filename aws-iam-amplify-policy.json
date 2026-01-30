@@ -2,14 +2,23 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AmplifyDeploymentPermissions",
+            "Sid": "AmplifyAppLevelPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "amplify:GetApp"
+            ],
+            "Resource": [
+                "arn:aws:amplify:*:380714695818:apps/*"
+            ]
+        },
+        {
+            "Sid": "AmplifyBranchAndJobPermissions",
             "Effect": "Allow",
             "Action": [
                 "amplify:StartJob",
                 "amplify:StopJob",
                 "amplify:GetJob",
                 "amplify:ListJobs",
-                "amplify:GetApp",
                 "amplify:GetBranch"
             ],
             "Resource": [
