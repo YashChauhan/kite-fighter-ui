@@ -27,6 +27,7 @@ export const getUserClubRole = async (
     "club" in firstClub
   ) {
     const membership = user.clubs.find((m: any) => {
+      if (!m.club) return false;
       const memberClubId = m.club._id || m.club.id;
       console.log("🔍 Checking membership for club:", {
         memberClubId,
@@ -83,6 +84,7 @@ export const isUserClubOwnerOrCoOwner = async (
     "club" in firstClub
   ) {
     const hasOwnerRole = user.clubs.some((m: any) => {
+      if (!m.club) return false;
       const isOwner = m.role === "owner" || m.role === "co_owner";
       console.log(`🔍 Checking club membership:`, {
         club: m.club?.name,
@@ -141,7 +143,7 @@ export const isUserMemberOfClub = (
     // Handle different club formats
     if (typeof c === "string") {
       return c === clubId;
-    } else if (typeof c === "object" && "club" in c) {
+    } else if (typeof c === "object" && "club" in c && c.club) {
       return (c.club._id || c.club.id) === clubId;
     } else if (typeof c === "object") {
       return (c._id || c.id) === clubId;

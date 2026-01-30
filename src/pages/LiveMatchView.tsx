@@ -163,7 +163,7 @@ export default function LiveMatchView() {
     (Array.isArray(user?.clubs) && user.clubs.some((userClub: any) => {
       // Get role from populated clubs structure
       const membership = typeof userClub === 'object' && 'role' in userClub ? userClub : null;
-      if (!membership) return false;
+      if (!membership || !membership.club) return false;
       
       const clubId = membership.club?._id || membership.club?.id;
       const role = membership.role;
