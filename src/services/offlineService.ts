@@ -82,6 +82,11 @@ class OfflineService {
     await this.init();
     if (!this.db) throw new Error("Database not initialized");
 
+    const matchId = match._id || match.id;
+    if (!matchId) {
+      throw new Error("Match must have an id or _id");
+    }
+
     const pinnedCount = await this.getPinnedCount();
     if (pinnedCount >= MAX_PINNED) {
       throw new Error(`Cannot pin more than ${MAX_PINNED} matches`);
@@ -91,7 +96,7 @@ class OfflineService {
     const store = transaction.objectStore(MATCHES_STORE);
 
     const cachedMatch: CachedMatch & { matchId: string } = {
-      matchId: match.id,
+      matchId: matchId,
       match,
       cachedAt: Date.now(),
       pinnedAt: Date.now(),
@@ -199,6 +204,11 @@ class OfflineService {
     await this.init();
     if (!this.db) throw new Error("Database not initialized");
 
+    const matchId = match._id || match.id;
+    if (!matchId) {
+      throw new Error("Match must have an id or _id");
+    }
+
     const transaction = this.db.transaction([MATCHES_STORE], "readwrite");
     const store = transaction.objectStore(MATCHES_STORE);
 
@@ -206,7 +216,7 @@ class OfflineService {
     const existing = await new Promise<
       (CachedMatch & { matchId: string }) | undefined
     >((resolve, reject) => {
-      const request = store.get(match.id);
+      const request = store.get(matchId);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -215,7 +225,7 @@ class OfflineService {
     if (existing?.pinnedAt) return;
 
     const cachedMatch: CachedMatch & { matchId: string } = {
-      matchId: match.id,
+      matchId: matchId,
       match,
       cachedAt: Date.now(),
       pinnedAt: existing?.pinnedAt,

@@ -51,11 +51,9 @@ interface ClubMembershipManagementProps {
 }
 
 interface Member {
-  playerId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
+  playerId: string;
+  playerName: string;
+  playerEmail: string;
   role: 'owner' | 'co_owner' | 'member';
   joinedAt: string;
 }
@@ -116,7 +114,7 @@ export default function ClubMembershipManagement({
   const getUserRole = (): 'owner' | 'co_owner' | 'member' | null => {
     if (!user) return null;
     const member = members.find(
-      (m) => (m.playerId._id || m.playerId) === (user._id || user.id)
+      (m) => m.playerId === (user._id || user.id)
     );
     return member?.role || null;
   };
@@ -354,14 +352,14 @@ export default function ClubMembershipManagement({
             </Typography>
             <List>
               {members.map((member, index) => (
-                <Box key={member.playerId._id}>
+                <Box key={member.playerId}>
                   {index > 0 && <Divider />}
                   <ListItem
                     sx={{ px: 0 }}
                     secondaryAction={
                       isOwner() &&
-                      member.playerId._id !== user?._id &&
-                      member.playerId._id !== user?.id ? (
+                      member.playerId !== user?._id &&
+                      member.playerId !== user?.id ? (
                         <IconButton
                           edge="end"
                           onClick={() => openRoleChangeDialog(member)}
@@ -379,15 +377,15 @@ export default function ClubMembershipManagement({
                       primary={
                         <Box display="flex" alignItems="center" gap={1}>
                           <Typography variant="body1">
-                            {member.playerId.name}
+                            {member.playerName}
                           </Typography>
                           <Chip
                             label={member.role.replace('_', '-')}
                             size="small"
                             color={getRoleColor(member.role) as any}
                           />
-                          {(member.playerId._id === user?._id ||
-                            member.playerId._id === user?.id) && (
+                          {(member.playerId === user?._id ||
+                            member.playerId === user?.id) && (
                             <Chip label="You" size="small" variant="outlined" />
                           )}
                         </Box>
@@ -395,7 +393,7 @@ export default function ClubMembershipManagement({
                       secondary={
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            {member.playerId.email}
+                            {member.playerEmail}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Joined {format(new Date(member.joinedAt), 'MMM dd, yyyy')}

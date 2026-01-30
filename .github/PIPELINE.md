@@ -49,11 +49,6 @@ VITE_API_BASE_URL_DEV     # Development API URL
 VITE_SOCKET_URL_DEV       # Development WebSocket URL
 ```
 
-### Variables
-```
-DEPLOY_URL                # Deployed application URL for health checks
-```
-
 ## 🔧 Setup Instructions
 
 ### 1. Configure GitHub Secrets
