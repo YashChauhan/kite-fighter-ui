@@ -75,6 +75,7 @@ export default function ClubDetailsPage() {
           // Check if clubs are populated with role info (PlayerClubMembership[])
           if (typeof firstClub === 'object' && 'role' in firstClub && 'club' in firstClub) {
             const membership = user.clubs.find((m: any) => {
+              if (!m.club) return false;
               const memberClubId = m.club._id || m.club.id;
               console.log('Comparing club:', memberClubId, 'with', clubId);
               return memberClubId === clubId;
