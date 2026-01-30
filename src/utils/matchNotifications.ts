@@ -30,14 +30,34 @@ export const getMatchNotifications = (
 
   // Helper: Check if user is a captain
   const isUserCaptain = teams.some((team) => {
-    if (!team?.captain) return false;
+    if (!team?.captain) {
+      console.log("🔍 No captain in team:", team);
+      return false;
+    }
 
     const captainId =
       typeof team.captain.playerId === "string"
         ? team.captain.playerId
         : team.captain.playerId?._id || team.captain.playerId?.id;
 
+    console.log("🔍 Checking captain:", {
+      teamId: team.teamId,
+      captainId,
+      userId,
+      match: captainId === userId,
+      captain: team.captain,
+    });
+
     return captainId === userId;
+  });
+
+  console.log("🔍 Captain check result:", {
+    matchId: match._id || match.id,
+    matchName: match.name,
+    matchStatus: match.status,
+    isUserCaptain,
+    userId,
+    teamsCount: teams.length,
   });
 
   // Check captain confirmation needed
