@@ -125,6 +125,7 @@ export default function MatchesListPage() {
       const params: any = {
         page: pageNum,
         limit: ITEMS_PER_PAGE,
+        populate: 'teams', // Populate teams to get captain information
       };
 
       if (filters.clubId) params.clubId = filters.clubId;
@@ -135,6 +136,12 @@ export default function MatchesListPage() {
       if (filters.myMatches && user) params.playerId = user._id || user.id;
 
       const response = await getMatches(params);
+
+      // Debug: Log first match to see structure
+      if (response.data.length > 0) {
+        console.log("📋 First match from API:", response.data[0]);
+        console.log("📋 First match teams:", response.data[0].teams);
+      }
 
       // Use the matches as-is from the API (no need for validation since we're only using basic fields)
       if (reset) {
