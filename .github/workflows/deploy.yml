@@ -14,6 +14,11 @@ on:
           - production
           - staging
 
+# Prevent multiple deployments from running concurrently
+concurrency:
+  group: amplify-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Deploy to AWS Amplify
@@ -52,15 +57,68 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       
+      - name: Check for existing jobs
+        id: check-jobs
+        run: |
+          echo "🔍 Checking for existing deployment jobs..."
+          
+          RUNNING_JOBS=$(aws amplify list-jobs \
+            --app-id ${{ secrets.AMPLIFY_APP_ID }} \
+            --branch-name main \
+            --max-results 5 \
+            --query "jobSummaries[?status=='RUNNING' || status=='PENDING'].jobId" \
+            --output text)
+          
+          if [ -n "$RUNNING_JOBS" ]; then
+            echo "⏳ Found running/pending jobs: $RUNNING_JOBS"
+            echo "⏳ Waiting for existing jobs to complete..."
+            
+            for JOB_ID in $RUNNING_JOBS; do
+              echo "📊 Monitoring job: $JOB_ID"
+              
+              # Wait up to 10 minutes for job to complete
+              COUNTER=0
+              MAX_WAIT=60
+              
+              while [ $COUNTER -lt $MAX_WAIT ]; do
+                JOB_STATUS=$(aws amplify get-job \
+                  --app-id ${{ secrets.AMPLIFY_APP_ID }} \
+                  --branch-name main \
+                  --job-id "$JOB_ID" \
+                  --query 'job.summary.status' \
+                  --output text)
+                
+                echo "📊 Job $JOB_ID status: $JOB_STATUS"
+                
+                if [ "$JOB_STATUS" = "SUCCEED" ] || [ "$JOB_STATUS" = "FAILED" ] || [ "$JOB_STATUS" = "CANCELLED" ]; then
+                  echo "✅ Job $JOB_ID completed with status: $JOB_STATUS"
+                  break
+                fi
+                
+                sleep 10
+                COUNTER=$((COUNTER + 1))
+              done
+              
+              if [ $COUNTER -ge $MAX_WAIT ]; then
+                echo "⚠️ Job $JOB_ID still running after 10 minutes, proceeding anyway..."
+              fi
+            done
+          else
+            echo "✅ No existing jobs found, ready to deploy"
+          fi
+      
       - name: Trigger Amplify deployment
         id: amplify-deploy
         run: |
+          echo "🚀 Starting new deployment job..."
+          
           JOB_ID=$(aws amplify start-job \
             --app-id ${{ secrets.AMPLIFY_APP_ID }} \
             --branch-name main \
             --job-type RELEASE \
             --query 'jobSummary.jobId' \
             --output text)
+          
           echo "job-id=$JOB_ID" >> $GITHUB_OUTPUT
           echo "✅ Deployment job started: $JOB_ID"
       
