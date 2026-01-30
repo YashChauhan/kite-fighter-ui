@@ -137,12 +137,6 @@ export default function MatchesListPage() {
 
       const response = await getMatches(params);
 
-      // Debug: Log first match to see structure
-      if (response.data.length > 0) {
-        console.log("📋 First match from API:", response.data[0]);
-        console.log("📋 First match teams:", response.data[0].teams);
-      }
-
       // Use the matches as-is from the API (no need for validation since we're only using basic fields)
       if (reset) {
         setMatches(response.data);
@@ -381,19 +375,6 @@ export default function MatchesListPage() {
             const isPinned = pinnedMatchIds.has(match._id || match.id);
             const notifications = getMatchNotifications(match, user?._id || user?.id);
             const notificationLabel = getNotificationLabel(notifications);
-
-            // Debug logging for notification detection
-            if ((match._id || match.id) === 'your-match-id-here' || match.name === 'test2') {
-              console.log("🔍 Match card rendering:", {
-                matchId: match._id || match.id,
-                matchName: match.name,
-                matchStatus: match.status,
-                userId: user?._id || user?.id,
-                notifications,
-                notificationLabel,
-                teams: match.teams,
-              });
-            }
 
             return (
               <Card
