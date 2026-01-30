@@ -51,7 +51,7 @@ import {
 import { getFights } from "../api/fights";
 import { getClubById } from "../api/clubs";
 import { useAuth } from "../contexts/AuthContext";
-import socketService from "../services/socketService";
+import realtimeService, { type ConnectionMode } from "../services/realtimeService";
 import notificationService from "../services/notificationService";
 import { offlineService } from "../services/offlineService";
 import RecordFightForm from "../components/RecordFightForm";
@@ -80,6 +80,7 @@ export default function LiveMatchView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [connectionMode, setConnectionMode] = useState<ConnectionMode>("offline");
   const [showConnectionStatus, setShowConnectionStatus] = useState(false);
   const [recordDrawerOpen, setRecordDrawerOpen] = useState(false);
   const [confirmingParticipation, setConfirmingParticipation] = useState(false);
@@ -320,25 +321,28 @@ export default function LiveMatchView() {
       return;
     }
 
-    socketService.connect();
-    socketService.joinMatchRoom(matchId);
+    realtimeService.connect();
+    realtimeService.subscribeToMatch(matchId, true); // Mark as active match
 
-    // Connection status
-    const handleConnect = () => {
-      setConnected(true);
+    // Connection mode changes
+    const handleModeChange = (data: { mode: ConnectionMode }) => {
+      setConnectionMode(data.mode);
+      setConnected(data.mode !== "offline");
       setShowConnectionStatus(true);
+      
+      if (data.mode === "websocket") {
+        notificationService.success("🟢 Connected: Live updates");
+      } else if (data.mode === "polling") {
+        notificationService.warning("🟡 Connected: Polling mode (slower updates)");
+      } else {
+        notificationService.error("🔴 Disconnected");
+      }
     };
 
-    const handleDisconnect = () => {
-      setConnected(false);
-      setShowConnectionStatus(true);
-    };
-
-    socketService.on("connect", handleConnect);
-    socketService.on("disconnect", handleDisconnect);
+    realtimeService.onModeChanged(handleModeChange);
 
     // Match events (using new native WebSocket event names)
-    const unsubMatchStarting = socketService.onMatchStarted((message: any) => {
+    const unsubMatchStarting = realtimeService.onMatchStarted((message: any) => {
       if (message.matchId === matchId) {
         // Update match data with normalized structure
         const updatedMatch = message.data?.match || message.match;
@@ -359,7 +363,7 @@ export default function LiveMatchView() {
       }
     });
 
-    const unsubFightReported = socketService.onFightReported((message: any) => {
+    const unsubFightReported = realtimeService.onFightReported((message: any) => {
       if (message.matchId === matchId && message.data?.fight) {
         setFights((prev) => [...(prev || []), message.data.fight]);
         const winner = message.data.fight.proposedResult;
@@ -367,7 +371,7 @@ export default function LiveMatchView() {
       }
     });
 
-    const unsubFightConfirmed = socketService.onFightConfirmed(
+    const unsubFightConfirmed = realtimeService.onFightConfirmed(
       (message: any) => {
         if (message.matchId === matchId && message.data?.fight) {
           console.log("🎯 Fight confirmed via WebSocket:", message.data.fight);
@@ -398,7 +402,7 @@ export default function LiveMatchView() {
       },
     );
 
-    const unsubFightDisputed = socketService.onFightDisputed((message: any) => {
+    const unsubFightDisputed = realtimeService.onFightDisputed((message: any) => {
       if (message.matchId === matchId && message.data?.fight) {
         // Update fight with disputed status
         setFights((prev) =>
@@ -415,7 +419,7 @@ export default function LiveMatchView() {
       }
     });
 
-    const unsubMatchCompleted = socketService.onMatchCompleted(
+    const unsubMatchCompleted = realtimeService.onMatchCompleted(
       (message: any) => {
         if (message.matchId === matchId && message.data?.match) {
           setMatch((prev) =>
@@ -435,7 +439,7 @@ export default function LiveMatchView() {
     );
 
     // Roster management events
-    const unsubPlayersAdded = socketService.onPlayersAdded((message: any) => {
+    const unsubPlayersAdded = realtimeService.onPlayersAdded((message: any) => {
       if (message.matchId === matchId || message.data?.matchId === matchId) {
         console.log("🎯 Players added via WebSocket:", message);
         notificationService.info("Roster updated: Players added");
@@ -453,7 +457,7 @@ export default function LiveMatchView() {
       }
     });
 
-    const unsubPlayersRemoved = socketService.onPlayersRemoved(
+    const unsubPlayersRemoved = realtimeService.onPlayersRemoved(
       (message: any) => {
         if (message.matchId === matchId || message.data?.matchId === matchId) {
           console.log("🎯 Players removed via WebSocket:", message);
@@ -473,7 +477,7 @@ export default function LiveMatchView() {
       },
     );
 
-    const unsubCaptainChanged = socketService.onCaptainChanged(
+    const unsubCaptainChanged = realtimeService.onCaptainChanged(
       (message: any) => {
         if (message.matchId === matchId || message.data?.matchId === matchId) {
           console.log("🎯 Captain changed via WebSocket:", message);
@@ -494,8 +498,6 @@ export default function LiveMatchView() {
     );
 
     return () => {
-      socketService.off("connect", handleConnect);
-      socketService.off("disconnect", handleDisconnect);
       unsubMatchStarting();
       unsubFightReported();
       unsubFightConfirmed();
@@ -504,7 +506,7 @@ export default function LiveMatchView() {
       unsubPlayersAdded();
       unsubPlayersRemoved();
       unsubCaptainChanged();
-      socketService.leaveMatchRoom(matchId);
+      realtimeService.unsubscribeFromMatch(matchId);
     };
   }, [matchId]);
 
@@ -1062,13 +1064,25 @@ export default function LiveMatchView() {
                 : "Date not available"}
             </Typography>
           </Box>
-          <IconButton size="small">
-            {connected ? (
-              <ConnectedIcon color="success" />
-            ) : (
-              <DisconnectedIcon color="error" />
-            )}
-          </IconButton>
+          <Tooltip 
+            title={
+              connectionMode === "websocket" 
+                ? "Live updates" 
+                : connectionMode === "polling" 
+                ? "Polling mode (slower updates)" 
+                : "Offline"
+            }
+          >
+            <IconButton size="small">
+              {connectionMode === "websocket" ? (
+                <ConnectedIcon color="success" />
+              ) : connectionMode === "polling" ? (
+                <ConnectedIcon sx={{ color: "#FFA500" }} />
+              ) : (
+                <DisconnectedIcon color="error" />
+              )}
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Status Chips */}

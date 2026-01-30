@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Box,
@@ -17,6 +17,8 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Paper,
+  Tooltip,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -28,10 +30,14 @@ import {
   Groups as ClubsIcon,
   EmojiEvents as MatchesIcon,
   People as PlayersIcon,
+  Wifi as ConnectedIcon,
+  WifiOff as DisconnectedIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ApprovalStatus, UserRole } from '../types';
+import realtimeService, { type ConnectionMode } from '../services/realtimeService';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -42,6 +48,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [connectionMode, setConnectionMode] = useState<ConnectionMode>('offline');
+
+  // Listen for connection mode changes
+  useEffect(() => {
+    const handleModeChange = (data: { mode: ConnectionMode }) => {
+      setConnectionMode(data.mode);
+    };
+
+    const unsubscribe = realtimeService.onModeChanged(handleModeChange);
+    setConnectionMode(realtimeService.getMode());
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const getCurrentTab = () => {
     if (location.pathname.startsWith('/clubs')) return 'clubs';
@@ -76,6 +97,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     handleClose();
   };
 
+  const handleRetryConnection = () => {
+    realtimeService.retryConnection();
+  };
+
   const getStatusChip = () => {
     if (!user) return null;
 
@@ -100,6 +125,55 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       );
     }
     return null;
+  };
+
+  const getConnectionChip = () => {
+    if (connectionMode === 'websocket') {
+      return (
+        <Tooltip title="Live updates via WebSocket">
+          <Chip
+            icon={<ConnectedIcon />}
+            label="Live"
+            size="small"
+            color="success"
+            sx={{ ml: 1 }}
+          />
+        </Tooltip>
+      );
+    }
+    if (connectionMode === 'polling') {
+      return (
+        <Tooltip title="Polling mode - Click to retry WebSocket connection">
+          <Chip
+            icon={<ConnectedIcon />}
+            label="Polling"
+            size="small"
+            sx={{ 
+              ml: 1, 
+              backgroundColor: '#FFA500', 
+              color: 'white',
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: '#FF8C00',
+              }
+            }}
+            onClick={handleRetryConnection}
+          />
+        </Tooltip>
+      );
+    }
+    return (
+      <Tooltip title="Offline - Click to reconnect">
+        <Chip
+          icon={<DisconnectedIcon />}
+          label="Offline"
+          size="small"
+          color="error"
+          sx={{ ml: 1, cursor: 'pointer' }}
+          onClick={handleRetryConnection}
+        />
+      </Tooltip>
+    );
   };
 
   return (
@@ -148,6 +222,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 {user.name}
               </Typography>
               {getStatusChip()}
+              {getConnectionChip()}
               <IconButton
                 size="large"
                 aria-label="account of current user"

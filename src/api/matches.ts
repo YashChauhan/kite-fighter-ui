@@ -151,3 +151,15 @@ export const changeCaptain = async (
     throw new Error(formatError(error));
   }
 };
+
+// Polling endpoint for match updates
+export const pollMatchUpdates = async (
+  matchId: string,
+  sinceParam?: string,
+): Promise<{ hasChanges: boolean; match?: Match }> => {
+  const params = sinceParam ? { since: sinceParam } : {};
+  const response = await apiClient.get(`/polling/matches/${matchId}/updates`, {
+    params,
+  });
+  return response.data;
+};
