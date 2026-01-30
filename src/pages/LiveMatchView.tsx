@@ -60,6 +60,7 @@ import { AddPlayersDialog } from "../components/AddPlayersDialog";
 import { RemovePlayersDialog } from "../components/RemovePlayersDialog";
 import { ChangeCaptainDialog } from "../components/ChangeCaptainDialog";
 import { canManageRoster } from "../utils/matchPermissions";
+import { getMatchStatusColor, getMatchStatusLabel, getMatchTypeColor, getMatchTypeLabel } from '../utils/colorUtils';
 
 const STAR_COLORS: Record<string, string> = {
   GREEN: "#4CAF50",
@@ -1073,20 +1074,13 @@ export default function LiveMatchView() {
         {/* Status Chips */}
         <Box display="flex" gap={1} mt={1}>
           <Chip
-            label={match.status}
-            color={
-              match.status === MatchStatus.ACTIVE
-                ? "success"
-                : match.status === MatchStatus.READY_TO_START
-                  ? "info"
-                  : match.status === MatchStatus.COMPLETED
-                    ? "default"
-                    : "warning"
-            }
+            label={getMatchStatusLabel(match.status)}
+            color={getMatchStatusColor(match.status)}
             size="small"
           />
           <Chip
-            label={match.type || match.matchType}
+            label={getMatchTypeLabel(match.type || match.matchType)}
+            color={getMatchTypeColor(match.type || match.matchType)}
             variant="outlined"
             size="small"
           />

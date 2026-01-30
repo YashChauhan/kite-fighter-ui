@@ -38,6 +38,7 @@ import { offlineService } from '../services/offlineService';
 import notificationService from '../services/notificationService';
 import { EmptyState } from '../components/EmptyState';
 import CreateMatchDialog from '../components/CreateMatchDialog';
+import { getMatchStatusColor, getMatchStatusLabel, getMatchTypeColor, getMatchTypeLabel } from '../utils/colorUtils';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -217,25 +218,6 @@ export default function MatchesListPage() {
     }
   };
 
-  const getStatusColor = (status: MatchStatus) => {
-    switch (status) {
-      case MatchStatus.SCHEDULED:
-        return 'info';
-      case MatchStatus.LIVE:
-        return 'success';
-      case MatchStatus.COMPLETED:
-        return 'default';
-      case MatchStatus.CANCELLED:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getTypeLabel = (type: MatchType) => {
-    return type === MatchType.TRAINING ? 'Training' : 'Competitive';
-  };
-
   if (loading && matches.length === 0) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -387,12 +369,13 @@ export default function MatchesListPage() {
 
                   <Box display="flex" gap={1} flexWrap="wrap">
                     <Chip
-                      label={match.status}
-                      color={getStatusColor(match.status)}
+                      label={getMatchStatusLabel(match.status)}
+                      color={getMatchStatusColor(match.status)}
                       size="small"
                     />
                     <Chip
-                      label={getTypeLabel(match.type || match.matchType)}
+                      label={getMatchTypeLabel(match.type || match.matchType)}
+                      color={getMatchTypeColor(match.type || match.matchType)}
                       variant="outlined"
                       size="small"
                     />

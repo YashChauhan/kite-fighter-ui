@@ -42,6 +42,7 @@ import { getPlayerById, updatePlayer } from '../api/players';
 import { getFights } from '../api/fights';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
+import { getApprovalStatusColor, getApprovalStatusLabel, getUserRoleColor, getUserRoleLabel, getClubRoleColor, getClubRoleLabel } from '../utils/colorUtils';
 
 const STAR_COLORS: Record<string, string> = {
   'GREEN': '#00C853',
@@ -76,7 +77,7 @@ export default function PlayerProfile() {
         setLoading(true);
         setError(null);
 
-        const fetchedPlayer = await getPlayerById(playerId);
+        const fetchedPlayer = await getPlayerById(playerId, true); // Populate clubs
         setPlayer(fetchedPlayer);
         setEditedName(fetchedPlayer.name);
 
@@ -206,9 +207,43 @@ export default function PlayerProfile() {
           {player.email}
         </Typography>
 
-        <Box display="flex" gap={1} justifyContent="center" mt={2}>
-          <Chip label={player.status} color={player.status === 'approved' ? 'success' : 'warning'} />
-          <Chip label={player.role} variant="outlined" />
+        <Box display="flex" gap={1} justifyContent="center" flexWrap="wrap" mt={2}>
+          {/* Only show status if pending */}
+          {player.status === 'pending' && (
+            <Chip 
+              label={getApprovalStatusLabel(player.status)} 
+              color={getApprovalStatusColor(player.status)} 
+            />
+          )}
+          
+          <Chip 
+            label={getUserRoleLabel(player.role)} 
+            color={getUserRoleColor(player.role)}
+            variant="outlined"
+          />
+          
+          {/* Show club roles */}
+          {Array.isArray(player.clubs) && player.clubs.length > 0 && (
+            <>
+              {player.clubs.map((item: any, index: number) => {
+                // Handle both PlayerClubMembership format and direct club format
+                const role = item.role;
+                const clubId = item.club?._id || item.club?.id || item.club || item._id || item.id;
+                
+                if (role === 'owner' || role === 'co_owner') {
+                  return (
+                    <Chip 
+                      key={`role-${clubId}-${index}`}
+                      label={getClubRoleLabel(role)} 
+                      color={getClubRoleColor(role)}
+                      size="small"
+                    />
+                  );
+                }
+                return null;
+              })}
+            </>
+          )}
         </Box>
       </Box>
 
