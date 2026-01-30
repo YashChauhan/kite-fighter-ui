@@ -1,5 +1,6 @@
 const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || "ws://localhost:3000/api/v1/ws/matches";
+  import.meta.env.VITE_SOCKET_URL ||
+  "wss://ef8mfpabua.ap-south-1.awsapprunner.com/api/v1/ws/matches";
 
 // Log WebSocket configuration in development
 if (import.meta.env.VITE_ENVIRONMENT === "development") {

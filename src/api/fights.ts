@@ -64,3 +64,15 @@ export const confirmFight = async (data: {
   });
   return response.data;
 };
+
+// Polling endpoint for fight updates
+export const pollMatchFights = async (
+  matchId: string,
+  sinceParam?: string,
+): Promise<{ hasChanges: boolean; fights?: Fight[] }> => {
+  const params = sinceParam ? { since: sinceParam } : {};
+  const response = await apiClient.get(`/polling/matches/${matchId}/fights`, {
+    params,
+  });
+  return response.data;
+};
