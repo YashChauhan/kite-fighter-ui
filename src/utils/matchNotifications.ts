@@ -28,10 +28,28 @@ export const getMatchNotifications = (
 
   const teams = match.teams || [match.team1, match.team2].filter(Boolean);
 
+  // Log match structure for debugging
+  if (match.name === "test2" || (match._id || match.id) === "69790a09c40853b8b8d42bd3") {
+    console.log("🔍 Full match structure for test2:", {
+      matchId: match._id || match.id,
+      teams: teams,
+      teamsArray: match.teams,
+      team1: match.team1,
+      team2: match.team2,
+    });
+  }
+
   // Helper: Check if user is a captain
   const isUserCaptain = teams.some((team) => {
     if (!team?.captain) {
-      console.log("🔍 No captain in team:", team);
+      if (match.name === "test2") {
+        console.log("🔍 No captain in team:", {
+          teamId: team?.teamId,
+          team: team,
+          hasPlayers: !!team?.players,
+          playersCount: team?.players?.length,
+        });
+      }
       return false;
     }
 
@@ -40,13 +58,15 @@ export const getMatchNotifications = (
         ? team.captain.playerId
         : team.captain.playerId?._id || team.captain.playerId?.id;
 
-    console.log("🔍 Checking captain:", {
-      teamId: team.teamId,
-      captainId,
-      userId,
-      match: captainId === userId,
-      captain: team.captain,
-    });
+    if (match.name === "test2") {
+      console.log("🔍 Checking captain:", {
+        teamId: team.teamId,
+        captainId,
+        userId,
+        match: captainId === userId,
+        captain: team.captain,
+      });
+    }
 
     return captainId === userId;
   });
