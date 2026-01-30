@@ -16,6 +16,7 @@ import {
   Autocomplete,
   useTheme,
   useMediaQuery,
+  Badge,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -23,6 +24,7 @@ import {
   PushPinOutlined as PinOutlinedIcon,
   FilterList as FilterIcon,
   Refresh as RefreshIcon,
+  Notifications as NotificationIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -36,8 +38,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCanModify, useCanCreateMatch } from '../hooks/useCanModify';
 import { offlineService } from '../services/offlineService';
 import notificationService from '../services/notificationService';
+import realtimeService from '../services/realtimeService';
 import { EmptyState } from '../components/EmptyState';
 import CreateMatchDialog from '../components/CreateMatchDialog';
+import { getMatchNotifications, getNotificationLabel } from '../utils/matchNotifications';
 import { getMatchStatusColor, getMatchStatusLabel, getMatchTypeColor, getMatchTypeLabel } from '../utils/colorUtils';
 
 const ITEMS_PER_PAGE = 20;
@@ -163,6 +167,42 @@ export default function MatchesListPage() {
       loadMatches(page + 1);
     }
   }, [inView, hasMore, loading, loadingMore, page, loadMatches]);
+
+  // Real-time match updates
+  useEffect(() => {
+    if (!user) return;
+
+    realtimeService.connect();
+
+    const handleMatchCreated = (message: any) => {
+      if (!message.data?.match) return;
+      
+      // Add new match to the beginning of the list
+      setMatches((prev) => [message.data.match, ...prev]);
+      notificationService.info(`New match created: ${message.data.match.name}`);
+    };
+
+    const handleMatchUpdated = (message: any) => {
+      if (!message.data?.match) return;
+
+      // Update existing match in the list
+      setMatches((prev) =>
+        prev.map((m) =>
+          (m._id || m.id) === (message.data.match._id || message.data.match.id)
+            ? message.data.match
+            : m
+        )
+      );
+    };
+
+    const unsubscribeCreated = realtimeService.onMatchCreated(handleMatchCreated);
+    const unsubscribeUpdated = realtimeService.onMatchUpdated(handleMatchUpdated);
+
+    return () => {
+      unsubscribeCreated();
+      unsubscribeUpdated();
+    };
+  }, [user]);
 
   // Pull to refresh handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -332,6 +372,8 @@ export default function MatchesListPage() {
         ) : (
           matches.map((match) => {
             const isPinned = pinnedMatchIds.has(match._id || match.id);
+            const notifications = getMatchNotifications(match, user?._id || user?.id);
+            const notificationLabel = getNotificationLabel(notifications);
 
             return (
               <Card
@@ -339,6 +381,7 @@ export default function MatchesListPage() {
                 sx={{
                   mb: 2,
                   cursor: 'pointer',
+                  position: 'relative',
                   '&:hover': {
                     boxShadow: 4,
                   },
@@ -348,9 +391,23 @@ export default function MatchesListPage() {
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                     <Box flex={1}>
-                      <Typography variant="h6" component="h2" gutterBottom>
-                        {match.name}
-                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="h6" component="h2">
+                          {match.name}
+                        </Typography>
+                        {notificationLabel && (
+                          <Badge
+                            badgeContent={notifications.totalPending || '!'}
+                            color={notifications.canStart ? "success" : "warning"}
+                            sx={{ ml: 0.5 }}
+                          >
+                            <NotificationIcon 
+                              color="action" 
+                              fontSize="small"
+                            />
+                          </Badge>
+                        )}
+                      </Box>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         {format(new Date(match.scheduledAt || match.matchDate), 'PPp')}
                       </Typography>
@@ -379,6 +436,14 @@ export default function MatchesListPage() {
                       variant="outlined"
                       size="small"
                     />
+                    {notificationLabel && (
+                      <Chip
+                        label={notificationLabel}
+                        color={notifications.canStart ? "success" : "warning"}
+                        size="small"
+                        icon={<NotificationIcon />}
+                      />
+                    )}
                     {match.status === MatchStatus.COMPLETED && match.winnerTeam && (
                       <Chip
                         label={`Winner: Team ${match.winnerTeam}`}

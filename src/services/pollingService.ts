@@ -59,10 +59,7 @@ class PollingService {
       : baseInterval * this.visibilitySlowdownFactor;
   }
 
-  private createPollingInterval(
-    matchId: string,
-    state: PollingState,
-  ): number {
+  private createPollingInterval(matchId: string, state: PollingState): number {
     const interval = this.getEffectiveInterval(state);
 
     return window.setInterval(async () => {
