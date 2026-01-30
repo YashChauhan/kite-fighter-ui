@@ -1066,18 +1066,18 @@ export default function LiveMatchView() {
           </Box>
           <Tooltip 
             title={
-              connectionMode === "websocket" 
-                ? "Live updates" 
-                : connectionMode === "polling" 
-                ? "Polling mode (slower updates)" 
+              connectionMode === "polling" 
+                ? "Polling mode (updates every 3s)" 
+                : connectionMode === "websocket"
+                ? "Live updates via WebSocket"
                 : "Offline"
             }
           >
             <IconButton size="small">
-              {connectionMode === "websocket" ? (
-                <ConnectedIcon color="success" />
-              ) : connectionMode === "polling" ? (
+              {connectionMode === "polling" ? (
                 <ConnectedIcon sx={{ color: "#FFA500" }} />
+              ) : connectionMode === "websocket" ? (
+                <ConnectedIcon color="success" />
               ) : (
                 <DisconnectedIcon color="error" />
               )}
