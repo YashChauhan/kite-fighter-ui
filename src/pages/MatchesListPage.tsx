@@ -375,6 +375,19 @@ export default function MatchesListPage() {
             const notifications = getMatchNotifications(match, user?._id || user?.id);
             const notificationLabel = getNotificationLabel(notifications);
 
+            // Debug logging for notification detection
+            if ((match._id || match.id) === 'your-match-id-here' || match.name === 'test2') {
+              console.log("🔍 Match card rendering:", {
+                matchId: match._id || match.id,
+                matchName: match.name,
+                matchStatus: match.status,
+                userId: user?._id || user?.id,
+                notifications,
+                notificationLabel,
+                teams: match.teams,
+              });
+            }
+
             return (
               <Card
                 key={match._id || match.id}

@@ -5,6 +5,13 @@ import { getMatchById } from "../api/matches";
 type EventCallback = (data: any) => void;
 type ConnectionMode = "websocket" | "polling" | "offline";
 
+// Check if WebSocket is enabled via environment variable
+const WEBSOCKET_ENABLED = import.meta.env.VITE_ENABLE_WEBSOCKET !== "false";
+
+if (!WEBSOCKET_ENABLED) {
+  console.log("🔕 WebSocket disabled via VITE_ENABLE_WEBSOCKET=false");
+}
+
 class RealtimeService {
   private mode: ConnectionMode = "offline";
   private eventListeners: Map<string, Set<EventCallback>> = new Map();
@@ -13,6 +20,7 @@ class RealtimeService {
   private maxReconnectAttempts = 5;
   private reconnectAttempts = 0;
   private isInitialized = false;
+  private websocketEnabled = WEBSOCKET_ENABLED;
 
   constructor() {
     this.setupWebSocketListeners();
@@ -186,6 +194,13 @@ class RealtimeService {
 
     console.log("🚀 Initializing RealtimeService");
     this.isInitialized = true;
+
+    // If WebSocket is disabled, use polling only
+    if (!this.websocketEnabled) {
+      console.log("📡 WebSocket disabled - using polling only");
+      this.switchToPolling();
+      return;
+    }
 
     // Try WebSocket first
     socketService.connect();
@@ -384,6 +399,11 @@ class RealtimeService {
   retryConnection(): void {
     console.log("🔄 Manual reconnection requested");
     this.reconnectAttempts = 0;
+
+    if (!this.websocketEnabled) {
+      console.log("⚠️ WebSocket is disabled - cannot retry");
+      return;
+    }
 
     if (this.mode === "polling") {
       // Clear scheduled retry and try immediately
