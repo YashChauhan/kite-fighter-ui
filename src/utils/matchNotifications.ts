@@ -37,11 +37,20 @@ export const getMatchNotifications = (
       team1: match.team1,
       team2: match.team2,
       allParticipants: match.allParticipants,
+      fullMatch: match, // Log the entire match object
     });
   }
 
   // For matches list where teams aren't populated, use allParticipants
   const isUserParticipant = match.allParticipants?.includes(userId);
+  
+  console.log("🔍 Participant check:", {
+    matchId: match._id || match.id,
+    matchName: match.name,
+    allParticipants: match.allParticipants,
+    userId,
+    isUserParticipant,
+  });
 
   // Helper: Check if user is a captain (only works if teams are populated)
   const isUserCaptain = teams.some((team) => {
