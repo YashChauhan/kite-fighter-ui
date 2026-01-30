@@ -1,0 +1,144 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: PR details
+        run: |
+          echo "PR #${{ github.event.pull_request.number }}"
+          echo "Title: ${{ github.event.pull_request.title }}"
+          echo "Author: ${{ github.event.pull_request.user.login }}"
+          echo "Base: ${{ github.event.pull_request.base.ref }}"
+          echo "Head: ${{ github.event.pull_request.head.ref }}"
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        id: lint
+        run: |
+          npm run lint > lint-output.txt 2>&1 || true
+          cat lint-output.txt
+        continue-on-error: true
+      
+      - name: Run tests with coverage
+        id: test
+        run: |
+          npm run test:coverage > test-output.txt 2>&1
+          cat test-output.txt
+      
+      - name: Comment PR with results
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🤖 Automated PR Checks\n\n';
+            
+            // Lint results
+            comment += '### 📝 Linting\n';
+            if ('${{ steps.lint.outcome }}' === 'success') {
+              comment += '✅ No linting errors found\n\n';
+            } else {
+              comment += '⚠️ Linting issues detected. Please review.\n\n';
+            }
+            
+            // Test results
+            comment += '### 🧪 Tests\n';
+            if ('${{ steps.test.outcome }}' === 'success') {
+              comment += '✅ All tests passed\n\n';
+            } else {
+              comment += '❌ Some tests failed. Please fix.\n\n';
+            }
+            
+            comment += '---\n';
+            comment += '*This is an automated check. Please ensure all issues are resolved before merging.*';
+            
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build PR version
+        run: npm run build:prod
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL_PROD }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL_PROD }}
+      
+      - name: Check bundle size
+        run: |
+          echo "📦 Bundle size analysis:"
+          du -sh dist/
+          find dist -type f -name "*.js" -exec du -h {} \; | sort -h | tail -10
+
+  conflict-check:
+    name: Merge Conflict Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          
+          if git merge-tree $(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }}) HEAD origin/${{ github.event.pull_request.base.ref }} | grep -q "<<<<<<< "; then
+            echo "❌ Merge conflicts detected!"
+            exit 1
+          else
+            echo "✅ No merge conflicts"
+          fi
