@@ -36,10 +36,14 @@ export const getMatchNotifications = (
       teamsArray: match.teams,
       team1: match.team1,
       team2: match.team2,
+      allParticipants: match.allParticipants,
     });
   }
 
-  // Helper: Check if user is a captain
+  // For matches list where teams aren't populated, use allParticipants
+  const isUserParticipant = match.allParticipants?.includes(userId);
+
+  // Helper: Check if user is a captain (only works if teams are populated)
   const isUserCaptain = teams.some((team) => {
     if (!team?.captain) {
       if (match.name === "test2") {
@@ -139,19 +143,29 @@ export const getMatchNotifications = (
     });
   }
 
-  // Check for active matches where user is a captain
+  // Check for active matches where user is a captain OR participant
   // (likely has pending fight confirmations)
   // Note: MatchStatus.LIVE === MatchStatus.ACTIVE === "active"
-  if (match.status === "active" && isUserCaptain) {
-    console.log("🔔 Notification detected:", {
-      matchId: match._id || match.id,
-      matchName: match.name,
-      status: match.status,
-      isUserCaptain,
-      userId,
-    });
-    notifications.hasPendingActions = true;
-    notifications.totalPending++;
+  if (match.status === "active") {
+    // If teams are populated, check if user is captain
+    // Otherwise, fall back to checking if user is a participant
+    const teamsArray = Array.isArray(teams) ? teams : [];
+    const teamsAreEmpty = teamsArray.length === 0 || teamsArray.every(t => !t?.captain);
+    const shouldShowNotification = isUserCaptain || (teamsAreEmpty && isUserParticipant);
+    
+    if (shouldShowNotification) {
+      console.log("🔔 Notification detected:", {
+        matchId: match._id || match.id,
+        matchName: match.name,
+        status: match.status,
+        isUserCaptain,
+        isUserParticipant,
+        teamsAreEmpty,
+        userId,
+      });
+      notifications.hasPendingActions = true;
+      notifications.totalPending++;
+    }
   }
 
   return notifications;
