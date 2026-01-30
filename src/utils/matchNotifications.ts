@@ -101,10 +101,15 @@ export const getMatchNotifications = (
 
   // Check for active matches where user is a captain
   // (likely has pending fight confirmations)
-  if (
-    (match.status === MatchStatus.ACTIVE || match.status === MatchStatus.LIVE) &&
-    isUserCaptain
-  ) {
+  // Note: MatchStatus.LIVE === MatchStatus.ACTIVE === "active"
+  if (match.status === "active" && isUserCaptain) {
+    console.log("🔔 Notification detected:", {
+      matchId: match._id || match.id,
+      matchName: match.name,
+      status: match.status,
+      isUserCaptain,
+      userId,
+    });
     notifications.hasPendingActions = true;
     notifications.totalPending++;
   }
