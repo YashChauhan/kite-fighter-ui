@@ -89,8 +89,6 @@ export default function LiveMatchView() {
   const [changeCaptainDialogOpen, setChangeCaptainDialogOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [clubPlayers, setClubPlayers] = useState<{[key: string]: Player[]}>({});
-  const [finishingMatch, setFinishingMatch] = useState(false);
-  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
 
   const streakScrollRef = useRef<HTMLDivElement>(null);
 
@@ -98,16 +96,9 @@ export default function LiveMatchView() {
   const canStartMatchValidation = () => {
     if (!match || !user) return { allowed: false, reason: 'Match or user data not available' };
 
-    // Check if user is organizer
-    const organizerId = typeof match.organizerId === 'string' 
-      ? match.organizerId 
-      : (match.organizerId as any)?._id || (match.organizerId as any)?.id;
-    const userId = user._id || user.id;
+    // User must have permission to start (checked by canStartMatch earlier)
+    // This validation focuses on match state requirements, not authorization
     
-    if (organizerId !== userId && user.role !== 'admin') {
-      return { allowed: false, reason: 'Only the match organizer can start the match' };
-    }
-
     // Check match status
     if (!['pending_participants', 'ready_to_start', 'ready'].includes(match.status)) {
       return { allowed: false, reason: `Match cannot be started (current status: ${match.status})` };
@@ -150,7 +141,13 @@ export default function LiveMatchView() {
     return { allowed: true };
   };
 
-  // Check if user can start the match (organizer, admin, or club owner)
+  // Check if current user is a captain
+  const isCaptain = match && (
+    ((typeof match.team1?.captain?.playerId === 'object' ? (match.team1?.captain?.playerId as any)?._id || (match.team1?.captain?.playerId as any)?.id : match.team1?.captain?.playerId) === (user?._id || user?.id)) ||
+    ((typeof match.team2?.captain?.playerId === 'object' ? (match.team2?.captain?.playerId as any)?._id || (match.team2?.captain?.playerId as any)?.id : match.team2?.captain?.playerId) === (user?._id || user?.id))
+  );
+
+  // Check if user can start the match (organizer, admin, captain, or club owner)
   const canStartMatch = match && (
     // User is the organizer
     (typeof match.organizerId === 'string' 
@@ -158,6 +155,8 @@ export default function LiveMatchView() {
       : (match.organizerId as any)?._id === (user?._id || user?.id) ||
         (match.organizerId as any)?.id === (user?._id || user?.id)
     ) ||
+    // User is a captain
+    isCaptain ||
     // User is admin
     user?.role === 'admin' ||
     // User is owner/co-owner of involved clubs
@@ -490,11 +489,6 @@ export default function LiveMatchView() {
     })
   );
 
-  const isCaptain = match && (
-    ((typeof match.team1?.captain?.playerId === 'object' ? (match.team1?.captain?.playerId as any)?._id || (match.team1?.captain?.playerId as any)?.id : match.team1?.captain?.playerId) === (user?._id || user?.id)) ||
-    ((typeof match.team2?.captain?.playerId === 'object' ? (match.team2?.captain?.playerId as any)?._id || (match.team2?.captain?.playerId as any)?.id : match.team2?.captain?.playerId) === (user?._id || user?.id))
-  );
-
   // Check if current user is captain and needs to confirm
   const needsConfirmation = match && isCaptain && match.status === MatchStatus.PENDING_CAPTAIN_CONFIRMATION && (
     (match.team1?.captain?.confirmationStatus === 'pending' && 
@@ -802,7 +796,11 @@ export default function LiveMatchView() {
   const getClubPlayersForTeam = (teamId: string): Player[] => {
     if (!match) return [];
     
-    const team = match.teams.find(t => t.teamId === teamId);
+    // Handle both old and new API structure
+    const teams = match.teams || [match.team1, match.team2].filter(Boolean);
+    if (!teams || teams.length === 0) return [];
+    
+    const team = teams.find(t => t?.teamId === teamId);
     if (!team) return [];
     
     const clubId = typeof team.clubId === 'string' 
@@ -1150,20 +1148,8 @@ export default function LiveMatchView() {
         
         const currentUserId = user?._id || user?.id;
         console.log('🔍 Current user ID:', currentUserId);
+        console.log('🔍 Is captain (from existing check)?', isCaptain);
         
-        const isCaptain = match?.teams?.some(
-          team => {
-            const captainId = typeof team.captain?.playerId === 'object'
-              ? (team.captain.playerId as any)?._id || (team.captain.playerId as any)?.id
-              : team.captain?.playerId;
-            console.log('🔍 Checking captain ID:', captainId, 'vs current user:', currentUserId);
-            return captainId === currentUserId;
-          }
-        );
-        
-        console.log('🔍 Is captain?', isCaptain);
-        console.log('🔍 Should show section?', isCaptain && pendingFights.length > 0);
-
         if (!isCaptain) {
           console.log('❌ Not showing: User is not a captain');
           return null;

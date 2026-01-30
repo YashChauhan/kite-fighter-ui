@@ -127,7 +127,8 @@ export const AddPlayersDialog: React.FC<AddPlayersDialogProps> = ({
   };
 
   const getTeamName = () => {
-    const team = match.teams.find((t) => t.teamId === teamId);
+    const teams = match.teams || [match.team1, match.team2].filter(Boolean);
+    const team = teams?.find((t) => t?.teamId === teamId);
     return team?.teamName || teamId;
   };
 
@@ -207,7 +208,7 @@ export const AddPlayersDialog: React.FC<AddPlayersDialogProps> = ({
         {/* Result Display - Partial Success Handling */}
         {result && (
           <Box sx={{ mt: 3 }}>
-            {result.success.length > 0 && (
+            {result.success?.length > 0 && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 <AlertTitle>Success</AlertTitle>
                 Successfully added {result.success.length} player(s) to the
@@ -215,7 +216,7 @@ export const AddPlayersDialog: React.FC<AddPlayersDialogProps> = ({
               </Alert>
             )}
 
-            {result.failed.length > 0 && (
+            {result.failed?.length > 0 && (
               <Alert severity="warning">
                 <Box
                   sx={{
@@ -258,7 +259,7 @@ export const AddPlayersDialog: React.FC<AddPlayersDialogProps> = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>
-          {result && result.failed.length === 0 ? "Close" : "Cancel"}
+          {result && result.failed?.length === 0 ? "Close" : "Cancel"}
         </Button>
         <Button
           onClick={handleSubmit}

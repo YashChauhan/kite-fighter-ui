@@ -38,7 +38,8 @@ export const ChangeCaptainDialog: React.FC<ChangeCaptainDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const team = match.teams.find((t) => t.teamId === teamId);
+  const teams = match.teams || [match.team1, match.team2].filter(Boolean);
+  const team = teams?.find((t) => t?.teamId === teamId);
   const teamPlayers = team?.players || [];
   const currentCaptainId =
     typeof team?.captain?.playerId === "string"

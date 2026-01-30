@@ -45,7 +45,8 @@ export const RemovePlayersDialog: React.FC<RemovePlayersDialogProps> = ({
   const [result, setResult] = useState<BulkOperationResponse | null>(null);
   const [showFailedDetails, setShowFailedDetails] = useState(true);
 
-  const team = match.teams.find((t) => t.teamId === teamId);
+  const teams = match.teams || [match.team1, match.team2].filter(Boolean);
+  const team = teams?.find((t) => t?.teamId === teamId);
   const teamPlayers = team?.players || [];
 
   // Filter out captain and confirmed players
@@ -249,7 +250,7 @@ export const RemovePlayersDialog: React.FC<RemovePlayersDialogProps> = ({
         {/* Result Display - Partial Success Handling */}
         {result && (
           <Box sx={{ mt: 3 }}>
-            {result.success.length > 0 && (
+            {result.success?.length > 0 && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 <AlertTitle>Success</AlertTitle>
                 Successfully removed {result.success.length} player(s) from the
@@ -257,7 +258,7 @@ export const RemovePlayersDialog: React.FC<RemovePlayersDialogProps> = ({
               </Alert>
             )}
 
-            {result.failed.length > 0 && (
+            {result.failed?.length > 0 && (
               <Alert severity="warning">
                 <Box
                   sx={{
@@ -303,7 +304,7 @@ export const RemovePlayersDialog: React.FC<RemovePlayersDialogProps> = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>
-          {result && result.failed.length === 0 ? "Close" : "Cancel"}
+          {result && result.failed?.length === 0 ? "Close" : "Cancel"}
         </Button>
         <Button
           onClick={handleSubmit}
