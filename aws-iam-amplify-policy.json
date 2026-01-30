@@ -6,6 +6,7 @@
             "Effect": "Allow",
             "Action": [
                 "amplify:StartJob",
+                "amplify:StopJob",
                 "amplify:GetJob",
                 "amplify:ListJobs",
                 "amplify:GetApp",

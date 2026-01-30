@@ -32,9 +32,16 @@ The IAM user `github-actions-deployer` lacks the necessary Amplify permissions t
    - Name it: `AmplifyDeploymentPermissions`
    - Click "Create policy"
 
+   **Note:** If the policy already exists, you need to replace it:
+   - Click on the existing `AmplifyDeploymentPermissions` policy
+   - Click "Edit policy" → JSON tab
+   - Replace with updated content from `aws-iam-amplify-policy.json`
+   - Click "Review policy" → "Save changes"
+
 4. **Verify Permissions**
    - The user should now have:
      - `amplify:StartJob`
+     - `amplify:StopJob` (new - for manual job management)
      - `amplify:GetJob`
      - `amplify:ListJobs`
      - `amplify:GetApp`
@@ -104,6 +111,28 @@ aws iam attach-user-policy \
      --policy-name AmplifyDeploymentPermissions
    ```
 3. Check the resource ARN in the policy matches your Amplify app
+
+### LimitExceededException: already have pending or running jobs
+This means another deployment is in progress. The workflow now:
+- Automatically checks for existing jobs
+- Waits up to 10 minutes for them to complete
+- Uses concurrency control to prevent multiple workflow runs
+
+To manually check job status:
+```bash
+aws amplify list-jobs \
+  --app-id $AMPLIFY_APP_ID \
+  --branch-name main \
+  --max-results 5
+```
+
+To manually stop a running job (if needed):
+```bash
+aws amplify stop-job \
+  --app-id $AMPLIFY_APP_ID \
+  --branch-name main \
+  --job-id <job-id>
+```
 
 ### Cannot find IAM user
 The user might be named differently. Check GitHub secrets:
