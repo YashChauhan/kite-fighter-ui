@@ -109,6 +109,21 @@ connect(): void {
 ```
 🔕 WebSocket disabled via VITE_ENABLE_WEBSOCKET=false
 📡 WebSocket disabled - using polling only
+� Checking captain: {
+  teamId: "team1",
+  captainId: "69759b32f81f442b742dcfa4",
+  userId: "69759b32f81f442b742dcfa4",
+  match: true,
+  captain: { playerId: "69759b32f81f442b742dcfa4", ... }
+}
+🔍 Captain check result: {
+  matchId: "...",
+  matchName: "test2",
+  matchStatus: "active",
+  isUserCaptain: true,
+  userId: "69759b32f81f442b742dcfa4",
+  teamsCount: 2
+}
 🔔 Notification detected: {
   matchId: "...",
   matchName: "test2",
@@ -131,6 +146,12 @@ connect(): void {
   notificationLabel: "Action Required"
 }
 ```
+
+**Key Things to Look For:**
+1. `isUserCaptain: true` in the captain check result
+2. `🔔 Notification detected:` log appears
+3. `notifications.hasPendingActions: true` in match card rendering
+4. `notificationLabel: "Action Required"` appears
 
 ## Status Constants Reference
 
